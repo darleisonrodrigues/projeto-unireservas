@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Uni Reservas Design System - University Housing Platform */
+/* Inspired by Airbnb with academic blue theme */
+
+@layer base {
+  :root {
+    /* Background colors */
+    --background: 0 0% 100%;
+    --foreground: 215 25% 15%;
+
+    /* Card components */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    /* Popover components */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Primary - University Blue Theme */
+    --primary: 210 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 210 85% 65%;
+    --primary-dark: 210 85% 45%;
+
+    /* Secondary - Light Gray */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 215 25% 15%;
+
+    /* Muted colors */
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 15% 55%;
+
+    /* Accent colors */
+    --accent: 210 20% 96%;
+    --accent-foreground: 215 25% 15%;
+
+    /* Status colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* UI elements */
+    --border: 210 20% 90%;
+    --input: 210 20% 96%;
+    --ring: 210 85% 55%;
+
+    /* Geometric properties */
+    --radius: 0.75rem;
+
+    /* Custom design tokens for Uni Reservas */
+    --university-blue: 210 85% 55%;
+    --university-blue-light: 210 85% 65%;
+    --university-blue-dark: 210 85% 45%;
+    --neutral-50: 210 20% 98%;
+    --neutral-100: 210 20% 96%;
+    --neutral-200: 210 20% 90%;
+    --neutral-300: 210 15% 75%;
+    --neutral-400: 210 15% 55%;
+    --neutral-500: 210 15% 40%;
+    --neutral-600: 215 25% 25%;
+    --neutral-700: 215 25% 15%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--university-blue)), hsl(var(--university-blue-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--university-blue)), hsl(var(--university-blue-dark)));
+    --gradient-card: linear-gradient(145deg, hsl(var(--neutral-50)), hsl(var(--neutral-100)));
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px hsl(var(--neutral-200));
+    --shadow-medium: 0 4px 12px hsl(var(--neutral-200) / 0.15);
+    --shadow-strong: 0 8px 24px hsl(var(--neutral-300) / 0.2);
+    --shadow-primary: 0 4px 12px hsl(var(--university-blue) / 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Sidebar tokens */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 215 25% 15%;
+    --foreground: 0 0% 100%;
+
+    --card: 215 25% 15%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 215 25% 15%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 210 85% 65%;
+    --primary-foreground: 215 25% 15%;
+
+    --secondary: 215 20% 25%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 20% 25%;
+    --muted-foreground: 210 15% 70%;
+
+    --accent: 215 20% 25%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 25%;
+    --input: 215 20% 25%;
+    --ring: 210 85% 65%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Custom component styles for Uni Reservas */
+  .property-card {
+    @apply bg-card rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 ease-out cursor-pointer overflow-hidden;
+  }
+
+  .property-card:hover {
+    @apply transform -translate-y-1;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-primary text-primary-foreground px-6 py-3 rounded-lg font-medium shadow-primary hover:shadow-strong transition-all duration-300 ease-out;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary bg-transparent px-6 py-3 rounded-lg font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-300 ease-out;
+  }
+
+  .filter-chip {
+    @apply bg-neutral-100 text-neutral-600 px-4 py-2 rounded-full text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-300 ease-out cursor-pointer;
+  }
+
+  .filter-chip.active {
+    @apply bg-primary text-primary-foreground shadow-primary;
+  }
+}
