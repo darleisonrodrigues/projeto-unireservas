@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import kitnetImage from "@/assets/kitnet-1.jpg";
 import roomImage from "@/assets/room-1.jpg";
 import apartmentImage from "@/assets/apartment-1.jpg";
+import apartamento01Image from "@/assets/apartamento01.jpg";
+import apartamento02Image from "@/assets/apartamento02.jpg";
+import apartamento03Image from "@/assets/apartamento03.jpg";
 
 const Index = () => {
   // Mock data for properties
@@ -93,6 +96,48 @@ const Index = () => {
       amenities: ["wifi", "garagem"],
       capacity: 3,
       isFavorited: true
+    },
+    {
+      id: "7",
+      title: "Apartamento com vista para a cidade",
+      type: "apartamento" as const,
+      price: 1100,
+      location: "Centro, Belo Horizonte",
+      university: "UFMG",
+      distance: "700m",
+      image: apartamento01Image,
+      rating: 4.7,
+      amenities: ["wifi", "garagem"],
+      capacity: 2,
+      isFavorited: false
+    },
+    {
+      id: "8",
+      title: "Apartamento espaçoso com varanda",
+      type: "apartamento" as const,
+      price: 1300,
+      location: "Savassi, Belo Horizonte",
+      university: "PUC Minas",
+      distance: "1km",
+      image: apartamento02Image,
+      rating: 4.9,
+      amenities: ["wifi", "garagem"],
+      capacity: 3,
+      isFavorited: true
+    },
+    {
+      id: "9",
+      title: "Apartamento moderno e bem localizado",
+      type: "apartamento" as const,
+      price: 1250,
+      location: "Funcionários, Belo Horizonte",
+      university: "UFMG",
+      distance: "500m",
+      image: apartamento03Image,
+      rating: 4.8,
+      amenities: ["wifi", "garagem"],
+      capacity: 2,
+      isFavorited: false
     }
   ];
 
