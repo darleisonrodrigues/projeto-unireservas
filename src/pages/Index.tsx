@@ -191,7 +191,7 @@ const Index = () => {
             <div>
               <h4 className="font-semibold mb-4">Para Proprietários</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Anunciar imóvel</a></li>
+                <li><a href="/create-listing" className="hover:text-primary transition-all duration-300 ease-out">Anunciar imóvel</a></li>
                 <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Como funciona</a></li>
                 <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Gerenciar anúncios</a></li>
               </ul>

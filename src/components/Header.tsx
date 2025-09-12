@@ -31,7 +31,12 @@ const Header = () => {
 
           {/* Navigation items */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="hidden lg:flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden lg:flex"
+              onClick={() => window.location.href = '/create-listing'}
+            >
               Anunciar imóvel
             </Button>
             <Button variant="ghost" size="icon">
