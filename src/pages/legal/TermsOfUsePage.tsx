@@ -286,8 +286,8 @@ const TermsOfUsePage = () => {
                 <div className="bg-muted p-4 rounded-lg">
                   <p><strong className="text-foreground">UniReservas</strong></p>
                   <p>Email: contato@unireservas.com.br</p>
-                  <p>Telefone: (31) 3333-4444</p>
-                  <p>Endereço: Belo Horizonte, MG - Brasil</p>
+                  <p>Telefone: (85) 3333-4444</p>
+                  <p>Endereço: Fortaleza, CE - Brasil</p>
                 </div>
               </div>
             </section>

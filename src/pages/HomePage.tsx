@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import FilterBar from "@/components/FilterBar";
 import PropertyCard from "@/components/PropertyCard";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import kitnetImage from "@/assets/kitnet-1.jpg";
 import roomImage from "@/assets/room-1.jpg";
@@ -166,52 +167,7 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-neutral-100 border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4 bg-gradient-primary bg-clip-text text-transparent">
-                Uni Reservas
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                A plataforma que conecta estudantes aos melhores imóveis próximos às universidades.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Para Estudantes</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Buscar imóveis</a></li>
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Como alugar</a></li>
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Dicas para estudantes</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Para Proprietários</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/create-listing" className="hover:text-primary transition-all duration-300 ease-out">Anunciar imóvel</a></li>
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Como funciona</a></li>
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Gerenciar anúncios</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Suporte</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Central de ajuda</a></li>
-                <li><a href="#" className="hover:text-primary transition-all duration-300 ease-out">Contato</a></li>
-                <li><a href="/terms" className="hover:text-primary transition-all duration-300 ease-out">Termos de uso</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 Uni Reservas. Todos os direitos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
