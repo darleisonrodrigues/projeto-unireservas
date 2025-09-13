@@ -108,7 +108,7 @@ const CreateListing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header showSearch={false} />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">

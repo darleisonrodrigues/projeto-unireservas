@@ -38,7 +38,7 @@ const Profile = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <Header showSearch={false} />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -52,7 +52,7 @@ const Profile = () => {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <Header showSearch={false} />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Erro ao carregar perfil</h2>
@@ -65,7 +65,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header showSearch={false} />
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Profile Header */}

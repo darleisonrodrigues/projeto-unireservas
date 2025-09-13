@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
 
-const Header = () => {
+interface HeaderProps {
+  showSearch?: boolean;
+}
+
+const Header = ({ showSearch = true }: HeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -23,23 +27,25 @@ const Header = () => {
           </div>
 
           {/* Search bar - Hidden on mobile */}
-          <div className="hidden md:block flex-1 max-w-lg mx-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-muted-foreground" />
+          {showSearch && (
+            <div className="hidden md:block flex-1 max-w-lg mx-8">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar kitnets, quartos, apartamentos..."
+                  className="block w-full pl-10 pr-3 py-2 border border-border rounded-full bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      navigate(ROUTES.PROPERTIES.SEARCH);
+                    }
+                  }}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar kitnets, quartos, apartamentos..."
-                className="block w-full pl-10 pr-3 py-2 border border-border rounded-full bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    navigate(ROUTES.PROPERTIES.SEARCH);
-                  }
-                }}
-              />
             </div>
-          </div>
+          )}
 
           {/* Navigation items */}
           <div className="flex items-center space-x-4">
@@ -77,18 +83,25 @@ const Header = () => {
         </div>
 
         {/* Mobile search */}
-        <div className="md:hidden pb-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-muted-foreground" />
+        {showSearch && (
+          <div className="md:hidden pb-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar imóveis..."
+                className="block w-full pl-10 pr-3 py-2 border border-border rounded-full bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    navigate(ROUTES.PROPERTIES.SEARCH);
+                  }
+                }}
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Buscar imóveis..."
-              className="block w-full pl-10 pr-3 py-2 border border-border rounded-full bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
-            />
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

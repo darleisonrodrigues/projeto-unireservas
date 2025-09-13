@@ -15,9 +15,10 @@ const Hero = () => {
       
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Encontre o lugar perfeito para seus estudos
+            Encontre o lugar perfeito para<br />
+            morar perto da sua universidade.
           </h1>
           <p className="text-xl md:text-2xl mb-8 opacity-90 font-light">
             Kitnets, quartos e apartamentos próximos à sua universidade. 
