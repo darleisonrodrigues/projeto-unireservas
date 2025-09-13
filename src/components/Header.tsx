@@ -1,7 +1,11 @@
 import { Search, Menu, User, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/config/routes";
 
 const Header = () => {
+  const navigate = useNavigate();
+
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -9,7 +13,10 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 
+                className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent cursor-pointer"
+                onClick={() => navigate(ROUTES.HOME)}
+              >
                 Uni Reservas
               </h1>
             </div>
@@ -25,6 +32,11 @@ const Header = () => {
                 type="text"
                 placeholder="Buscar kitnets, quartos, apartamentos..."
                 className="block w-full pl-10 pr-3 py-2 border border-border rounded-full bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    navigate(ROUTES.PROPERTIES.SEARCH);
+                  }
+                }}
               />
             </div>
           </div>
@@ -35,16 +47,29 @@ const Header = () => {
               variant="ghost"
               size="sm"
               className="hidden lg:flex"
-              onClick={() => window.location.href = '/create-listing'}
+              onClick={() => navigate(ROUTES.LISTINGS.CREATE)}
             >
               Anunciar imóvel
             </Button>
-            <Button variant="ghost" size="icon">
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate(ROUTES.PROPERTIES.FAVORITES)}
+              title="Favoritos"
+            >
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
+            
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate(ROUTES.PROFILE.CLIENT)}
+              title="Perfil"
+            >
               <User className="h-5 w-5" />
             </Button>
+            
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-5 w-5" />
             </Button>
