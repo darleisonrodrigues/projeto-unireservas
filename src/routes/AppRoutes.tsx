@@ -18,6 +18,9 @@ import CreateListing from "@/pages/listings/CreateListing";
 // Perfil
 import ProfilePage from "@/pages/profile/ProfilePage";
 
+// Páginas legais
+import TermsOfUsePage from "@/pages/legal/TermsOfUsePage";
+
 /**
  * Sistema de roteamento centralizado
  * Organizado por contexto/funcionalidade para facilitar manutenção
@@ -43,6 +46,9 @@ const AppRoutes = () => {
       {/* Perfis */}
       <Route path={ROUTES.PROFILE.CLIENT} element={<ProfilePage />} />
       <Route path={ROUTES.PROFILE.ADVERTISER} element={<ProfilePage />} />
+      
+      {/* Páginas de suporte e legais */}
+      <Route path={ROUTES.SUPPORT.TERMS} element={<TermsOfUsePage />} />
       
       {/* Rotas legadas - manter compatibilidade */}
       <Route path="/create-listing" element={<CreateListing />} />
