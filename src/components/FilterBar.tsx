@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Filter, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useProperties } from "@/contexts/PropertyContext";
 
 const FilterBar = () => {
-  const [activeFilter, setActiveFilter] = useState<string>("todos");
+  const { filters, updateFilter, filteredProperties } = useProperties();
 
   const propertyTypes = [
     { id: "todos", label: "Todos" },
@@ -32,9 +32,12 @@ const FilterBar = () => {
             {propertyTypes.map((type) => (
               <button
                 key={type.id}
-                onClick={() => setActiveFilter(type.id)}
+                onClick={() => {
+                  console.log('Clicou no filtro:', type.id);
+                  updateFilter('propertyType', type.id);
+                }}
                 className={`filter-chip whitespace-nowrap ${
-                  activeFilter === type.id ? 'active' : ''
+                  filters.propertyType === type.id ? 'active' : ''
                 }`}
               >
                 {type.label}
@@ -44,7 +47,11 @@ const FilterBar = () => {
 
           {/* Price range filter */}
           <div className="flex items-center space-x-2 border-r border-border pr-4 mr-2">
-            <select className="filter-chip bg-transparent border-none outline-none cursor-pointer">
+            <select 
+              className="filter-chip bg-transparent border-none outline-none cursor-pointer"
+              value={filters.priceRange}
+              onChange={(e) => updateFilter('priceRange', e.target.value)}
+            >
               {priceRanges.map((range) => (
                 <option key={range.id} value={range.id}>
                   {range.label}
@@ -55,13 +62,43 @@ const FilterBar = () => {
 
           {/* Quick filters */}
           <div className="flex items-center space-x-2">
-            <button className="filter-chip">
+            <button 
+              className={`filter-chip ${filters.amenities.includes('perto-universidade') ? 'active' : ''}`}
+              onClick={() => {
+                const currentAmenities = filters.amenities;
+                const amenity = 'perto-universidade';
+                const updatedAmenities = currentAmenities.includes(amenity)
+                  ? currentAmenities.filter(a => a !== amenity)
+                  : [...currentAmenities, amenity];
+                updateFilter('amenities', updatedAmenities);
+              }}
+            >
               Perto da universidade
             </button>
-            <button className="filter-chip">
+            <button 
+              className={`filter-chip ${filters.amenities.includes('mobiliado') ? 'active' : ''}`}
+              onClick={() => {
+                const currentAmenities = filters.amenities;
+                const amenity = 'mobiliado';
+                const updatedAmenities = currentAmenities.includes(amenity)
+                  ? currentAmenities.filter(a => a !== amenity)
+                  : [...currentAmenities, amenity];
+                updateFilter('amenities', updatedAmenities);
+              }}
+            >
               Mobiliado
             </button>
-            <button className="filter-chip">
+            <button 
+              className={`filter-chip ${filters.amenities.includes('pets') ? 'active' : ''}`}
+              onClick={() => {
+                const currentAmenities = filters.amenities;
+                const amenity = 'pets';
+                const updatedAmenities = currentAmenities.includes(amenity)
+                  ? currentAmenities.filter(a => a !== amenity)
+                  : [...currentAmenities, amenity];
+                updateFilter('amenities', updatedAmenities);
+              }}
+            >
               Permite pets
             </button>
           </div>
@@ -76,12 +113,16 @@ const FilterBar = () => {
         {/* Results count and sorting */}
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">247 imóveis</span> encontrados
+            <span className="font-medium text-foreground">{filteredProperties.length} imóveis</span> encontrados
           </div>
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">Ordenar por:</span>
-            <select className="text-sm bg-transparent border border-border rounded-md px-3 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <select 
+              className="text-sm bg-transparent border border-border rounded-md px-3 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              value={filters.sortBy}
+              onChange={(e) => updateFilter('sortBy', e.target.value)}
+            >
               <option value="relevancia">Relevância</option>
               <option value="menor-preco">Menor preço</option>
               <option value="maior-preco">Maior preço</option>

@@ -1,23 +1,13 @@
 import { Heart, MapPin, Users, Wifi, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Property } from "@/types/property";
+import { useProperties } from "@/contexts/PropertyContext";
 
-interface PropertyCardProps {
-  id: string;
-  title: string;
-  type: 'kitnet' | 'quarto' | 'apartamento';
-  price: number;
-  location: string;
-  university: string;
-  distance: string;
-  image: string;
-  rating: number;
-  amenities: string[];
-  capacity: number;
-  isFavorited?: boolean;
-}
+interface PropertyCardProps extends Property {}
 
 const PropertyCard = ({ 
+  id,
   title, 
   type, 
   price, 
@@ -28,8 +18,9 @@ const PropertyCard = ({
   rating, 
   amenities,
   capacity,
-  isFavorited = false 
+  isFavorited 
 }: PropertyCardProps) => {
+  const { toggleFavorite } = useProperties();
   
   const typeLabels = {
     kitnet: "Kitnet",
@@ -54,11 +45,14 @@ const PropertyCard = ({
         />
         
         {/* Favorite button */}
-        <button className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 ease-out ${
-          isFavorited 
-            ? 'bg-red-500 text-white' 
-            : 'bg-white/80 text-neutral-600 hover:bg-white hover:text-red-500'
-        }`}>
+        <button 
+          onClick={() => toggleFavorite(id)}
+          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 ease-out ${
+            isFavorited 
+              ? 'bg-red-500 text-white' 
+              : 'bg-white/80 text-neutral-600 hover:bg-white hover:text-red-500'
+          }`}
+        >
           <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
         </button>
         

@@ -1,8 +1,35 @@
 import { Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-apartment.jpg";
+import { useProperties } from "@/contexts/PropertyContext";
+import { useState } from "react";
 
 const Hero = () => {
+  const { updateFilter, resetFilters } = useProperties();
+  const [heroFilters, setHeroFilters] = useState({
+    location: "",
+    propertyType: "todos",
+    maxPrice: ""
+  });
+
+  const handleSearch = () => {
+    // Limpa filtros anteriores
+    resetFilters();
+    
+    // Aplica novos filtros
+    if (heroFilters.location) {
+      updateFilter('location', heroFilters.location);
+    }
+    
+    if (heroFilters.propertyType !== "todos") {
+      updateFilter('propertyType', heroFilters.propertyType);
+    }
+    
+    if (heroFilters.maxPrice) {
+      const maxPriceValue = parseInt(heroFilters.maxPrice);
+      updateFilter('maxPrice', maxPriceValue);
+    }
+  };
   return (
     <section className="relative bg-gradient-hero text-primary-foreground py-20 lg:py-32 overflow-hidden">
       {/* Background image with overlay */}
@@ -35,6 +62,8 @@ const Hero = () => {
                   <input 
                     type="text" 
                     placeholder="Universidade ou bairro"
+                    value={heroFilters.location}
+                    onChange={(e) => setHeroFilters(prev => ({ ...prev, location: e.target.value }))}
                     className="w-full pl-10 pr-3 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
                   />
                 </div>
@@ -42,28 +71,41 @@ const Hero = () => {
               
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Tipo de imóvel</label>
-                <select className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out">
-                  <option>Todos os tipos</option>
-                  <option>Kitnet</option>
-                  <option>Quarto</option>
-                  <option>Apartamento</option>
+                <select 
+                  value={heroFilters.propertyType}
+                  onChange={(e) => setHeroFilters(prev => ({ ...prev, propertyType: e.target.value }))}
+                  className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
+                >
+                  <option value="todos">Todos os tipos</option>
+                  <option value="kitnet">Kitnet</option>
+                  <option value="quarto">Quarto</option>
+                  <option value="apartamento">Apartamento</option>
                 </select>
               </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Preço máximo</label>
-                <select className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out">
-                  <option>Sem limite</option>
-                  <option>Até R$ 500</option>
-                  <option>Até R$ 800</option>
-                  <option>Até R$ 1200</option>
-                  <option>Até R$ 2000</option>
+                <select 
+                  value={heroFilters.maxPrice}
+                  onChange={(e) => setHeroFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                  className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
+                >
+                  <option value="">Sem limite</option>
+                  <option value="500">Até R$ 500</option>
+                  <option value="800">Até R$ 800</option>
+                  <option value="1200">Até R$ 1200</option>
+                  <option value="2000">Até R$ 2000</option>
                 </select>
               </div>
             </div>
             
             <div className="mt-6">
-              <Button variant="primary" size="lg" className="w-full md:w-auto px-12">
+              <Button 
+                variant="default" 
+                size="lg" 
+                onClick={handleSearch}
+                className="w-full md:w-auto px-12"
+              >
                 <Search className="mr-2 h-5 w-5" />
                 Buscar imóveis
               </Button>

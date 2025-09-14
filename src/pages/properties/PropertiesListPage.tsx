@@ -5,56 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Filter } from "lucide-react";
-import kitnetImage from "@/assets/kitnet-1.jpg";
-import roomImage from "@/assets/room-1.jpg";
-import apartmentImage from "@/assets/apartment-1.jpg";
+import { useProperties } from "@/contexts/PropertyContext";
 
 const PropertiesListPage = () => {
-  // Mock data - será substituído por dados da API
-  const properties = [
-    {
-      id: "1",
-      title: "Kitnet moderna próxima à UFMG",
-      type: "kitnet" as const,
-      price: 650,
-      location: "Pampulha, Belo Horizonte",
-      university: "UFMG",
-      distance: "500m",
-      image: kitnetImage,
-      rating: 4.8,
-      amenities: ["wifi", "garagem"],
-      capacity: 1,
-      isFavorited: false
-    },
-    {
-      id: "2", 
-      title: "Quarto individual com banheiro privativo",
-      type: "quarto" as const,
-      price: 480,
-      location: "Savassi, Belo Horizonte", 
-      university: "PUC Minas",
-      distance: "800m",
-      image: roomImage,
-      rating: 4.6,
-      amenities: ["wifi"],
-      capacity: 1,
-      isFavorited: true
-    },
-    {
-      id: "3",
-      title: "Apartamento 2 quartos para compartilhar",
-      type: "apartamento" as const,
-      price: 900,
-      location: "Funcionários, Belo Horizonte",
-      university: "UFMG",
-      distance: "1.2km", 
-      image: apartmentImage,
-      rating: 4.9,
-      amenities: ["wifi", "garagem", "lavanderia"],
-      capacity: 2,
-      isFavorited: false
-    }
-  ];
+  const { filteredProperties, updateFilter, filters } = useProperties();
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,6 +36,8 @@ const PropertiesListPage = () => {
                     <Input
                       placeholder="Localização (ex: Pampulha, BH)"
                       className="pl-10"
+                      value={filters.location}
+                      onChange={(e) => updateFilter('location', e.target.value)}
                     />
                   </div>
                   
@@ -90,6 +46,8 @@ const PropertiesListPage = () => {
                     <Input
                       placeholder="Tipo de imóvel ou universidade"
                       className="pl-10"
+                      value={filters.searchTerm}
+                      onChange={(e) => updateFilter('searchTerm', e.target.value)}
                     />
                   </div>
                   
@@ -109,7 +67,7 @@ const PropertiesListPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold">
-              {properties.length} imóveis encontrados
+              {filteredProperties.length} imóveis encontrados
             </h2>
             
             <Button variant="outline" size="sm">
@@ -123,7 +81,7 @@ const PropertiesListPage = () => {
 
         {/* Grid de propriedades */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => (
+          {filteredProperties.map((property) => (
             <PropertyCard
               key={property.id}
               {...property}
