@@ -28,7 +28,7 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Sobre</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Central de ajuda</Link></li>
+              <li><Link to={ROUTES.SUPPORT.HELP_CENTER} className="hover:text-primary transition-all duration-300 ease-out">Central de ajuda</Link></li>
               <li><Link to="/terms" className="hover:text-primary transition-all duration-300 ease-out">Termos de uso</Link></li>
               <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Política de privacidade</Link></li>
             </ul>

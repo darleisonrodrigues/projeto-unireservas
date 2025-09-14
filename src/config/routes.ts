@@ -49,6 +49,7 @@ export const ROUTES = {
     FAQ: '/faq',
     TERMS: '/terms',
     PRIVACY: '/privacy',
+    HELP_CENTER: '/help-center',
   },
   
   // Admin (futuro)
