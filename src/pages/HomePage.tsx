@@ -4,6 +4,7 @@ import FilterBar from "@/components/FilterBar";
 import PropertyCard from "@/components/PropertyCard";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import kitnetImage from "@/assets/kitnet-1.jpg";
 import roomImage from "@/assets/room-1.jpg";
 import apartmentImage from "@/assets/apartment-1.jpg";
@@ -12,8 +13,9 @@ import apartamento02Image from "@/assets/apartamento02.jpg";
 import apartamento03Image from "@/assets/apartamento03.jpg";
 
 const Index = () => {
-  // Mock data for properties
-  const properties = [
+  const [showMoreProperties, setShowMoreProperties] = useState(false);
+  // Mock data for properties - Imóveis iniciais
+  const initialProperties = [
     {
       id: "1",
       title: "Kitnet moderna próxima à UFMG",
@@ -125,7 +127,11 @@ const Index = () => {
       amenities: ["wifi", "garagem"],
       capacity: 3,
       isFavorited: true
-    },
+    }
+  ];
+
+  // Imóveis adicionais que aparecem após clicar em "Carregar mais"
+  const additionalProperties = [
     {
       id: "9",
       title: "Apartamento moderno e bem localizado",
@@ -142,6 +148,11 @@ const Index = () => {
     }
   ];
 
+  // Propriedades a serem exibidas (iniciais + adicionais se showMoreProperties for true)
+  const displayedProperties = showMoreProperties 
+    ? [...initialProperties, ...additionalProperties] 
+    : initialProperties;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -151,7 +162,7 @@ const Index = () => {
       {/* Properties grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {properties.map((property) => (
+          {displayedProperties.map((property) => (
             <PropertyCard
               key={property.id}
               {...property}
@@ -161,9 +172,18 @@ const Index = () => {
         
         {/* Load more */}
         <div className="text-center mt-12">
-          <Button variant="outline-primary">
-            Carregar mais imóveis
-          </Button>
+          {!showMoreProperties ? (
+            <Button 
+              variant="outline-primary"
+              onClick={() => setShowMoreProperties(true)}
+            >
+              Carregar mais imóveis
+            </Button>
+          ) : (
+            <p className="text-muted-foreground">
+              Todos os imóveis foram carregados
+            </p>
+          )}
         </div>
       </main>
 
