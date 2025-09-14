@@ -30,7 +30,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Central de ajuda</Link></li>
               <li><Link to="/terms" className="hover:text-primary transition-all duration-300 ease-out">Termos de uso</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Política de privacidade</Link></li>
+              <li><Link to={ROUTES.SUPPORT.PRIVACY} className="hover:text-primary transition-all duration-300 ease-out">Política de privacidade</Link></li>
             </ul>
           </div>
 
