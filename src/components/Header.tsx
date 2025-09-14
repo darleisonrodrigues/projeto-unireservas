@@ -67,11 +67,29 @@ const Header = ({ showSearch = true }: HeaderProps) => {
               <Heart className="h-5 w-5" />
             </Button>
             
+            {/* Botões de autenticação */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(ROUTES.AUTH.LOGIN)}
+            >
+              Entrar
+            </Button>
+            
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate(ROUTES.AUTH.REGISTER)}
+            >
+              Cadastrar
+            </Button>
+            
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => navigate(ROUTES.PROFILE.CLIENT)}
               title="Perfil"
+              className="hidden sm:flex"
             >
               <User className="h-5 w-5" />
             </Button>
