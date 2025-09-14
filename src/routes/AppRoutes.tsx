@@ -21,6 +21,7 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 // Páginas legais
 import TermsOfUsePage from "@/pages/legal/TermsOfUsePage";
 import HelpCenterPage from "@/pages/legal/HelpCenterPage";
+import FAQPage from "@/pages/legal/FAQPage";
 
 /**
  * Sistema de roteamento centralizado
@@ -51,6 +52,7 @@ const AppRoutes = () => {
       {/* Páginas de suporte e legais */}
       <Route path={ROUTES.SUPPORT.TERMS} element={<TermsOfUsePage />} />
       <Route path={ROUTES.SUPPORT.HELP_CENTER} element={<HelpCenterPage />} />
+      <Route path={ROUTES.SUPPORT.FAQ} element={<FAQPage />} />
       
       {/* Rotas legadas - manter compatibilidade */}
       <Route path="/create-listing" element={<CreateListing />} />
