@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin, Filter } from "lucide-react";
-import { useProperties } from "@/contexts/PropertyContext";
+import { useProperties } from "@/hooks/useProperties";
 
 const PropertiesListPage = () => {
   const { filteredProperties, updateFilter, filters } = useProperties();
@@ -13,8 +13,6 @@ const PropertiesListPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      {/* Hero Section com busca */}
       <section className="bg-gradient-to-r from-primary/10 to-blue-600/10 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">

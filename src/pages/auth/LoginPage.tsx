@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
+import { authService, LoginCredentials } from "@/services/authService";
 
 interface LoginFormData {
   email: string;
@@ -58,29 +59,28 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Simulação de login - aqui você conectará com o backend no futuro
-      console.log('Dados de login:', formData);
+      // Fazer login usando o serviço de autenticação
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password
+      };
       
-      // Simulando delay da API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const authResponse = await authService.login(credentials);
       
-      // Simulando login bem-sucedido
       toast({
         title: "Login realizado!",
-        description: "Bem-vindo ao UniReservas!",
+        description: `Bem-vindo, ${authResponse.user.name}!`,
         variant: "default"
       });
 
-      // Aqui você salvaria o token de autenticação
-      // localStorage.setItem('token', 'jwt_token_aqui');
-      
       // Redirecionar para página inicial
       navigate(ROUTES.HOME);
       
     } catch (error) {
+      console.error('Erro no login:', error);
       toast({
         title: "Erro no login",
-        description: "Verifique suas credenciais e tente novamente.",
+        description: error instanceof Error ? error.message : "Verifique suas credenciais e tente novamente.",
         variant: "destructive"
       });
     } finally {

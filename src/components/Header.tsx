@@ -1,7 +1,16 @@
-import { Search, Menu, User, Heart } from "lucide-react";
+import { Search, Menu, User, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   showSearch?: boolean;
@@ -9,6 +18,16 @@ interface HeaderProps {
 
 const Header = ({ showSearch = true }: HeaderProps) => {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate(ROUTES.HOME);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
+  };
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80">
@@ -49,14 +68,16 @@ const Header = ({ showSearch = true }: HeaderProps) => {
 
           {/* Navigation items */}
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden lg:flex"
-              onClick={() => navigate(ROUTES.LISTINGS.CREATE)}
-            >
-              Anunciar imóvel
-            </Button>
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden lg:flex"
+                onClick={() => navigate(ROUTES.LISTINGS.CREATE)}
+              >
+                Anunciar imóvel
+              </Button>
+            )}
             
             <Button 
               variant="ghost" 
@@ -67,32 +88,61 @@ const Header = ({ showSearch = true }: HeaderProps) => {
               <Heart className="h-5 w-5" />
             </Button>
             
-            {/* Botões de autenticação */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(ROUTES.AUTH.LOGIN)}
-            >
-              Entrar
-            </Button>
-            
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => navigate(ROUTES.AUTH.REGISTER)}
-            >
-              Cadastrar
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(ROUTES.PROFILE.CLIENT)}
-              title="Perfil"
-              className="hidden sm:flex"
-            >
-              <User className="h-5 w-5" />
-            </Button>
+            {/* Botões de autenticação ou menu do usuário */}
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium leading-none">{user?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => navigate(user?.userType === 'advertiser' ? 
+                      `${ROUTES.PROFILE.ADVERTISER}?type=anunciante` : 
+                      `${ROUTES.PROFILE.CLIENT}?type=cliente`
+                    )}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Meu Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(ROUTES.AUTH.LOGIN)}
+                >
+                  Entrar
+                </Button>
+                
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate(ROUTES.AUTH.REGISTER)}
+                >
+                  Cadastrar
+                </Button>
+              </>
+            )}
             
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="h-5 w-5" />

@@ -5,7 +5,7 @@ import PropertyCard from "@/components/PropertyCard";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useProperties } from "@/contexts/PropertyContext";
+import { useProperties } from "@/hooks/useProperties";
 
 const Index = () => {
   const { filteredProperties } = useProperties();

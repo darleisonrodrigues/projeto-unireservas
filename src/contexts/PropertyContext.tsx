@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, ReactNode, useEffect } from 'react';
 import { Property, FilterState, SortOption } from '@/types/property';
+import { propertyService } from '@/services/propertyService';
 
-// Importar dados mockados - no futuro será substituído por chamadas API
+// Importar dados mockados - fallback caso o backend não esteja disponível
 import kitnetImage from "@/assets/kitnet-1.jpg";
 import roomImage from "@/assets/room-1.jpg";
 import apartmentImage from "@/assets/apartment-1.jpg";
@@ -13,14 +14,17 @@ interface PropertyContextType {
   properties: Property[];
   filteredProperties: Property[];
   filters: FilterState;
+  isLoading: boolean;
+  error: string | null;
   updateFilter: (key: keyof FilterState, value: string | string[] | number | null) => void;
   resetFilters: () => void;
   toggleFavorite: (propertyId: string) => void;
+  refreshProperties: () => Promise<void>;
 }
 
 const PropertyContext = createContext<PropertyContextType | undefined>(undefined);
 
-// Dados mockados - centralizados para facilitar manutenção
+//dados mockados - centralizados para facilitar manutenção
 const mockProperties: Property[] = [
   {
     id: "1",
@@ -189,8 +193,35 @@ const initialFilters: FilterState = {
 };
 
 export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [properties, setProperties] = useState<Property[]>(mockProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Carregar propriedades na inicialização
+  useEffect(() => {
+    loadProperties();
+  }, []);
+
+  const loadProperties = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await propertyService.getAll();
+      setProperties(data);
+    } catch (err) {
+      console.error('Erro ao carregar propriedades:', err);
+      setError('Erro ao carregar propriedades. Usando dados de demonstração.');
+      //fallback para dados mockados
+      setProperties(mockProperties);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshProperties = async () => {
+    await loadProperties();
+  };
 
   const updateFilter = (key: keyof FilterState, value: string | string[] | number | null) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -210,21 +241,21 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
     );
   };
 
-  // Lógica de filtros
+  //logica de filtros
   const filteredProperties = useMemo(() => {
     console.log('Recalculando filtros. Filtros atuais:', filters);
     console.log('Total de propriedades:', properties.length);
     
     let filtered = [...properties];
 
-    // Filtro por tipo de propriedade
+    // filtro por tipo de propriedade
     if (filters.propertyType !== "todos") {
       console.log('Filtrando por tipo:', filters.propertyType);
       filtered = filtered.filter(property => property.type === filters.propertyType);
       console.log('Após filtro por tipo:', filtered.length);
     }
 
-    // Filtro por faixa de preço
+    //filtro por faixa de preço
     if (filters.priceRange !== "todos-precos") {
       switch (filters.priceRange) {
         case "ate-500":
@@ -242,12 +273,12 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
     }
 
-    // Filtro por preço máximo (da busca principal)
+    //filtro por preço maximo (da busca principal)
     if (filters.maxPrice !== null) {
       filtered = filtered.filter(property => property.price <= filters.maxPrice!);
     }
 
-    // Filtro por localização (busca parcial)
+    // filtro por localizaçao (busca parcial)
     if (filters.location) {
       filtered = filtered.filter(property => 
         property.location.toLowerCase().includes(filters.location.toLowerCase()) ||
@@ -255,7 +286,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       );
     }
 
-    // Filtro por termo de busca
+    // filtro por termo de busca
     if (filters.searchTerm) {
       filtered = filtered.filter(property => 
         property.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
@@ -264,14 +295,14 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       );
     }
 
-    // Filtro por amenidades
+    // filtro por amenidades
     if (filters.amenities.length > 0) {
       filtered = filtered.filter(property => 
         filters.amenities.some(amenity => property.amenities.includes(amenity))
       );
     }
 
-    // Ordenação
+    // Ordenaçao
     switch (filters.sortBy) {
       case "menor-preco":
         filtered.sort((a, b) => a.price - b.price);
@@ -287,7 +318,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
         filtered.sort((a, b) => Number(b.id) - Number(a.id));
         break;
       default:
-        // Relevância - mantém ordem original
+        // Relevancia - mantem ordem original
         break;
     }
 
@@ -299,9 +330,12 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
     properties,
     filteredProperties,
     filters,
+    isLoading,
+    error,
     updateFilter,
     resetFilters,
-    toggleFavorite
+    toggleFavorite,
+    refreshProperties
   };
 
   return (
@@ -311,10 +345,5 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
   );
 };
 
-export const useProperties = () => {
-  const context = useContext(PropertyContext);
-  if (context === undefined) {
-    throw new Error('useProperties must be used within a PropertyProvider');
-  }
-  return context;
-};
+// exportar contexto para uso em hook separado
+export { PropertyContext };

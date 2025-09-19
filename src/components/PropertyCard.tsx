@@ -2,9 +2,7 @@ import { Heart, MapPin, Users, Wifi, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/types/property";
-import { useProperties } from "@/contexts/PropertyContext";
-
-interface PropertyCardProps extends Property {}
+import { useProperties } from "@/hooks/useProperties";
 
 const PropertyCard = ({ 
   id,
@@ -18,8 +16,8 @@ const PropertyCard = ({
   rating, 
   amenities,
   capacity,
-  isFavorited 
-}: PropertyCardProps) => {
+  isFavorited
+}: Property) => {
   const { toggleFavorite } = useProperties();
   
   const typeLabels = {

@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProperties } from "@/contexts/PropertyContext";
+import { useProperties } from "@/hooks/useProperties";
 
 const FilterBar = () => {
   const { filters, updateFilter, filteredProperties } = useProperties();

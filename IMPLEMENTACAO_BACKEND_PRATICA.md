@@ -358,3 +358,10 @@ app.post('/api/listings', upload.array('photos', 10), async (req, res) => {
 **APIs:** 4 endpoints principais (`/auth/login`, `/auth/register`, `/listings`, `/properties`)
 
 **O frontend já está 100% pronto - só precisa trocar os mocks por chamadas reais! 🚀**
+
+===========================
+
+## 🎯 RESUMO PARA OS DEVS
+
+**Backend 50% finalizado**
+=============================

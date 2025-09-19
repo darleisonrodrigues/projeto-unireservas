@@ -1,7 +1,7 @@
 import { Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-apartment.jpg";
-import { useProperties } from "@/contexts/PropertyContext";
+import { useProperties } from "@/hooks/useProperties";
 import { useState } from "react";
 
 const Hero = () => {
