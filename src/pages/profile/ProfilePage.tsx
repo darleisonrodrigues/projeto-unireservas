@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserProperties } from "@/hooks/useUserProperties";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,28 +11,77 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, User, Home, Heart, MessageSquare, Bell, Loader2 } from "lucide-react";
+import { Settings, User, Home, Heart, MessageSquare, Bell, Loader2, Trash2, Plus, Edit } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ROUTES } from "@/config/routes";
 
 const Profile = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const userType = searchParams.get("type") || "cliente";
   const [activeTab, setActiveTab] = useState("dados-pessoais");
-  
-  const { profile, isLoading, error, updateProfile } = useProfile();
+
+  const { profile, isLoading, error, updateProfile, deleteProfile } = useProfile();
+  const { properties, isLoading: isLoadingProperties, error: propertiesError, refreshProperties } = useUserProperties();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [formData, setFormData] = useState<Record<string, string | number | boolean | undefined>>({});
 
-  const isAdvertiser = userType === "anunciante";
+  const isAdvertiser = profile?.userType === "advertiser";
 
-  const handleSaveProfile = async (formData: any) => {
+  const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
       await updateProfile(formData);
-      // TODO: Mostrar toast de sucesso
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram salvas com sucesso!",
+        variant: "default"
+      });
+      setFormData({}); // Limpar alterações pendentes
     } catch (err) {
-      // TODO: Mostrar toast de erro
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível atualizar o perfil. Tente novamente.",
+        variant: "destructive"
+      });
       console.error('Erro ao salvar perfil:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleFieldChange = (field: string, value: string | number | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteProfile();
+      toast({
+        title: "Conta deletada",
+        description: "Sua conta foi removida com sucesso.",
+        variant: "default"
+      });
+      navigate("/");
+    } catch (err) {
+      toast({
+        title: "Erro ao deletar conta",
+        description: "Não foi possível deletar a conta. Tente novamente.",
+        variant: "destructive"
+      });
+      console.error('Erro ao deletar conta:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -74,7 +124,7 @@ const Profile = () => {
             <CardHeader className="pb-6">
               <div className="flex items-start gap-6">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={profile.profileImage} />
+                  <AvatarImage src={profile.profileImage || profile.profile_image || ''} />
                   <AvatarFallback className="text-2xl">
                     {profile.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
@@ -83,25 +133,25 @@ const Profile = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <CardTitle className="text-2xl">
-                      {profile.userType === 'anunciante' && 'companyName' in profile 
-                        ? profile.companyName 
+                      {profile.userType === 'advertiser' && 'company_name' in profile
+                        ? (profile.companyName || profile.company_name)
                         : profile.name}
                     </CardTitle>
-                    {profile.userType === 'anunciante' && 'verified' in profile && profile.verified && (
+                    {profile.userType === 'advertiser' && profile.verified && (
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
                         Verificado
                       </Badge>
                     )}
                   </div>
                   
-                  <CardDescription className="text-base mb-4">
-                    {profile.userType === 'anunciante' && 'description' in profile ? (
+                  <div className="text-base mb-4 text-muted-foreground">
+                    {profile.userType === 'advertiser' && 'description' in profile ? (
                       <>
                         <div>{profile.description}</div>
                         <div className="mt-1 text-sm">
-                          {'totalProperties' in profile && `${profile.totalProperties} imóveis`} 
+                          {(profile.totalProperties || profile.total_properties) && `${profile.totalProperties || profile.total_properties} imóveis`}
                           {' • '}
-                          {'rating' in profile && `Avaliação ${profile.rating}/5`}
+                          {profile.rating && `Avaliação ${profile.rating}/5`}
                         </div>
                       </>
                     ) : (
@@ -112,14 +162,14 @@ const Profile = () => {
                         </>
                       )
                     )}
-                  </CardDescription>
+                  </div>
                   
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm">
                       <Settings className="w-4 h-4 mr-2" />
                       Editar Perfil
                     </Button>
-                    {profile.userType === 'anunciante' && (
+                    {profile.userType === 'advertiser' && (
                       <Button variant="outline" size="sm">
                         <Home className="w-4 h-4 mr-2" />
                         Gerenciar Imóveis
@@ -183,16 +233,17 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name">
-                      {profile.userType === 'anunciante' ? "Nome da Empresa" : "Nome Completo"}
+                      {profile.userType === 'advertiser' ? "Nome da Empresa" : "Nome Completo"}
                     </Label>
                     <Input
                       id="name"
-                      value={profile.userType === 'anunciante' && 'companyName' in profile 
-                        ? profile.companyName 
-                        : profile.name}
+                      value={formData.name !== undefined ? String(formData.name) :
+                        (profile.userType === 'advertiser' && 'company_name' in profile
+                          ? (profile.companyName || profile.company_name || '')
+                          : profile.name)}
                       onChange={(e) => {
-                        const field = profile.userType === 'anunciante' ? 'companyName' : 'name';
-                        handleSaveProfile({ [field]: e.target.value });
+                        const field = profile.userType === 'advertiser' ? 'company_name' : 'name';
+                        handleFieldChange(field, e.target.value);
                       }}
                     />
                   </div>
@@ -202,8 +253,8 @@ const Profile = () => {
                     <Input
                       id="email"
                       type="email"
-                      value={profile.email}
-                      onChange={(e) => handleSaveProfile({ email: e.target.value })}
+                      value={formData.email !== undefined ? String(formData.email) : profile.email}
+                      onChange={(e) => handleFieldChange('email', e.target.value)}
                     />
                   </div>
                   
@@ -211,18 +262,18 @@ const Profile = () => {
                     <Label htmlFor="phone">Telefone</Label>
                     <Input
                       id="phone"
-                      value={profile.phone}
-                      onChange={(e) => handleSaveProfile({ phone: e.target.value })}
+                      value={formData.phone !== undefined ? String(formData.phone) : (profile.phone || '')}
+                      onChange={(e) => handleFieldChange('phone', e.target.value)}
                     />
                   </div>
                   
-                  {profile.userType === 'anunciante' && 'cnpj' in profile ? (
+                  {profile.userType === 'advertiser' && 'cnpj' in profile ? (
                     <div className="space-y-2">
                       <Label htmlFor="cnpj">CNPJ</Label>
                       <Input
                         id="cnpj"
-                        value={profile.cnpj}
-                        onChange={(e) => handleSaveProfile({ cnpj: e.target.value })}
+                        value={formData.cnpj !== undefined ? String(formData.cnpj) : (profile.cnpj || '')}
+                        onChange={(e) => handleFieldChange('cnpj', e.target.value)}
                       />
                     </div>
                   ) : (
@@ -231,22 +282,22 @@ const Profile = () => {
                         <Label htmlFor="university">Universidade</Label>
                         <Input
                           id="university"
-                          value={profile.university}
-                          onChange={(e) => handleSaveProfile({ university: e.target.value })}
+                          value={formData.university !== undefined ? String(formData.university) : profile.university || ''}
+                          onChange={(e) => handleFieldChange('university', e.target.value)}
                         />
                       </div>
                     )
                   )}
                 </div>
                 
-                {profile.userType === 'cliente' && 'course' in profile && (
+                {profile.userType === 'student' && 'course' in profile && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="course">Curso</Label>
                       <Input
                         id="course"
-                        value={profile.course}
-                        onChange={(e) => handleSaveProfile({ course: e.target.value })}
+                        value={formData.course !== undefined ? String(formData.course) : profile.course || ''}
+                        onChange={(e) => handleFieldChange('course', e.target.value)}
                       />
                     </div>
                     
@@ -254,8 +305,8 @@ const Profile = () => {
                       <Label htmlFor="semester">Período</Label>
                       <Input
                         id="semester"
-                        value={profile.semester}
-                        onChange={(e) => handleSaveProfile({ semester: e.target.value })}
+                        value={formData.semester !== undefined ? String(formData.semester) : profile.semester || ''}
+                        onChange={(e) => handleFieldChange('semester', e.target.value)}
                       />
                     </div>
                   </div>
@@ -263,27 +314,32 @@ const Profile = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="bio">
-                    {profile.userType === 'anunciante' ? "Descrição da Empresa" : "Sobre mim"}
+                    {profile.userType === 'advertiser' ? "Descrição da Empresa" : "Sobre mim"}
                   </Label>
                   <Textarea
                     id="bio"
                     rows={4}
-                    value={profile.userType === 'anunciante' && 'description' in profile 
-                      ? profile.description 
-                      : 'bio' in profile ? profile.bio || '' : ''}
+                    value={
+                      profile.userType === 'advertiser'
+                        ? (formData.description !== undefined ? String(formData.description) : (profile.description || ''))
+                        : (formData.bio !== undefined ? String(formData.bio) : (profile.bio || ''))
+                    }
                     onChange={(e) => {
-                      const field = profile.userType === 'anunciante' ? 'description' : 'bio';
-                      handleSaveProfile({ [field]: e.target.value });
+                      const field = profile.userType === 'advertiser' ? 'description' : 'bio';
+                      handleFieldChange(field, e.target.value);
                     }}
-                    placeholder={profile.userType === 'anunciante' ? 
-                      "Descreva sua empresa e especializações..." : 
+                    placeholder={profile.userType === 'advertiser' ?
+                      "Descreva sua empresa e especializações..." :
                       "Conte um pouco sobre você..."
                     }
                   />
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button disabled={isSaving}>
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving || Object.keys(formData).length === 0}
+                  >
                     {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     Salvar Alterações
                   </Button>
@@ -312,20 +368,115 @@ const Profile = () => {
           <TabsContent value="imoveis" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {profile.userType === 'anunciante' ? "Meus Imóveis" : "Imóveis Favoritos"}
+                <CardTitle className="flex items-center justify-between">
+                  <span>{profile.userType === 'advertiser' ? "Meus Imóveis" : "Imóveis Favoritos"}</span>
+                  {profile.userType === 'advertiser' && (
+                    <Button onClick={() => navigate('/listings/create')} size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Novo Anúncio
+                    </Button>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  {profile.userType === 'anunciante' ? 
-                    "Gerencie seus anúncios de imóveis" : 
+                  {profile.userType === 'advertiser' ?
+                    "Gerencie seus anúncios de imóveis" :
                     "Seus imóveis salvos e favoritos"
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Funcionalidade em desenvolvimento
-                </div>
+                {profile.userType === 'advertiser' ? (
+                  // Mostrar propriedades do anunciante
+                  <>
+                    {isLoadingProperties ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                        Carregando suas propriedades...
+                      </div>
+                    ) : propertiesError ? (
+                      <div className="text-center py-8 text-red-500">
+                        <p>{propertiesError}</p>
+                        <Button variant="outline" onClick={refreshProperties} className="mt-2">
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    ) : properties.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Home className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium mb-2">Nenhum imóvel cadastrado</p>
+                        <p className="mb-4">Comece criando seu primeiro anúncio!</p>
+                        <Button onClick={() => navigate('/listings/create')}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Criar primeiro anúncio
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {properties.map((property) => (
+                          <Card key={property.id} className="overflow-hidden">
+                            <div className="aspect-video bg-gray-100 relative">
+                              {property.images && property.images.length > 0 ? (
+                                <img
+                                  src={property.images[0]}
+                                  alt={property.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-full h-full">
+                                  <Home className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                              )}
+                              <Badge className="absolute top-2 right-2">
+                                {property.type}
+                              </Badge>
+                            </div>
+                            <CardContent className="p-4">
+                              <h3 className="font-semibold text-lg mb-2 line-clamp-1">{property.title}</h3>
+                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                {property.description}
+                              </p>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-lg font-bold text-green-600">
+                                  R$ {property.price}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  {property.capacity} pessoas
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                {property.location}
+                              </p>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => navigate(ROUTES.LISTINGS.EDIT(property.id))}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => navigate(ROUTES.PROPERTIES.DETAILS(property.id))}
+                                >
+                                  Ver
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Mostrar favoritos do estudante (funcionalidade futura)
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Heart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Funcionalidade de favoritos em desenvolvimento</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -335,7 +486,7 @@ const Profile = () => {
               <CardHeader>
                 <CardTitle>Mensagens</CardTitle>
                 <CardDescription>
-                  Converse com {profile.userType === 'anunciante' ? "potenciais inquilinos" : "proprietários"}
+                  Converse com {profile.userType === 'advertiser' ? "potenciais inquilinos" : "proprietários"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -370,9 +521,47 @@ const Profile = () => {
                   Configurações gerais da conta e privacidade
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Funcionalidade em desenvolvimento
+              <CardContent className="space-y-6">
+                <div className="border-t pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium text-destructive">Zona de Perigo</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Ações irreversíveis que afetam permanentemente sua conta.
+                      </p>
+                    </div>
+
+                    <Card className="border-destructive">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-medium">Deletar conta</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Remove permanentemente sua conta e todos os dados associados.
+                            </p>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteAccount}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Deletando...
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Deletar Conta
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/types/property";
 import { useProperties } from "@/hooks/useProperties";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/config/routes";
 
 const PropertyCard = ({ 
   id,
@@ -19,6 +21,7 @@ const PropertyCard = ({
   isFavorited
 }: Property) => {
   const { toggleFavorite } = useProperties();
+  const navigate = useNavigate();
   
   const typeLabels = {
     kitnet: "Kitnet",
@@ -43,8 +46,8 @@ const PropertyCard = ({
         />
         
         {/* Favorite button */}
-        <button 
-          onClick={() => toggleFavorite(id)}
+        <button
+          onClick={async () => await toggleFavorite(id)}
           className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 ease-out ${
             isFavorited 
               ? 'bg-red-500 text-white' 
@@ -104,7 +107,11 @@ const PropertyCard = ({
               <span className="text-sm font-normal text-muted-foreground">/mês</span>
             </div>
           </div>
-          <Button size="sm" variant="primary">
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => navigate(ROUTES.PROPERTIES.DETAILS(id))}
+          >
             Ver detalhes
           </Button>
         </div>

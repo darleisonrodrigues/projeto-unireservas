@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { StudentProfile, AdvertiserProfile } from '@/types/profile';
-import { profileService, ProfileData, UpdateProfileData } from '@/services/profileService';
+import { profileService } from '@/services/profileService';
+import type { AuthResponse } from '@/services/authFirebaseService';
+import type { StudentProfile, AdvertiserProfile } from '@/types/profile';
+
+// Tipo do perfil do usuário baseado no Firebase
+type UserProfile = AuthResponse['user'];
 
 // Mock data como fallback
 const mockStudentProfile: StudentProfile = {
@@ -9,7 +13,7 @@ const mockStudentProfile: StudentProfile = {
   email: "joao@email.com",
   phone: "(31) 99999-9999",
   profileImage: "",
-  userType: "cliente",
+  userType: "student",
   university: "UFMG",
   course: "Engenharia da Computação",
   semester: "6º período",
@@ -30,7 +34,8 @@ const mockAdvertiserProfile: AdvertiserProfile = {
   email: "maria@email.com",
   phone: "(31) 88888-8888",
   profileImage: "",
-  userType: "anunciante",
+  userType: "advertiser",
+  company_name: "Imóveis Premium",
   companyName: "Imóveis Premium",
   cnpj: "12.345.678/0001-90",
   description: "Empresa especializada em imóveis para estudantes universitários.",
@@ -45,7 +50,7 @@ const mockAdvertiserProfile: AdvertiserProfile = {
 };
 
 export const useProfile = () => {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,18 +66,17 @@ export const useProfile = () => {
       setProfile(data);
     } catch (err) {
       console.error('Erro ao carregar perfil:', err);
-      setError('Erro ao carregar perfil. Usando dados de demonstração.');
-      // Fallback para dados mockados - assumindo perfil estudante
-      setProfile(mockStudentProfile);
+      setError('Erro ao carregar perfil');
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateProfile = async (data: UpdateProfileData): Promise<void> => {
+  const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
     try {
       setError(null);
-      const updatedProfile = await profileService.updateProfile(data);
+      const updatedProfile = await profileService.updateMyProfile(data);
       setProfile(updatedProfile);
     } catch (err) {
       console.error('Erro ao atualizar perfil:', err);
@@ -81,16 +85,14 @@ export const useProfile = () => {
     }
   };
 
-  const uploadProfileImage = async (file: File): Promise<void> => {
+  const deleteProfile = async (): Promise<void> => {
     try {
       setError(null);
-      const imageUrl = await profileService.uploadProfileImage(file);
-      if (profile) {
-        setProfile({ ...profile, profileImage: imageUrl });
-      }
+      await profileService.deleteMyProfile();
+      setProfile(null);
     } catch (err) {
-      console.error('Erro ao fazer upload da imagem:', err);
-      setError('Erro ao fazer upload da imagem. Tente novamente.');
+      console.error('Erro ao deletar perfil:', err);
+      setError('Erro ao deletar conta. Tente novamente.');
       throw err;
     }
   };
@@ -100,7 +102,7 @@ export const useProfile = () => {
     isLoading,
     error,
     updateProfile,
-    uploadProfileImage,
+    deleteProfile,
     refreshProfile: loadProfile
   };
 };

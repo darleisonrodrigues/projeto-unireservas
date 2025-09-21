@@ -1,7 +1,3 @@
-"""
-Modelos para propriedades
-Baseado em src/types/property.ts
-"""
 
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
@@ -19,12 +15,13 @@ class Property(BaseModel):
     #Modelo de propriedade
     id: Optional[str] = None
     title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
     type: Literal["kitnet", "quarto", "apartamento"]
     price: float = Field(..., gt=0)
     location: str = Field(..., min_length=1, max_length=200)
     university: str = Field(..., min_length=1, max_length=200)
     distance: str = Field(..., min_length=1, max_length=50)
-    image: str = Field(..., min_length=1)
+    images: List[str] = Field(default=[])
     rating: float = Field(default=0.0, ge=0, le=5)
     amenities: List[str] = Field(default=[])
     capacity: int = Field(..., gt=0)
@@ -43,7 +40,7 @@ class Property(BaseModel):
                 "location": "Pampulha, Belo Horizonte",
                 "university": "UFMG",
                 "distance": "500m",
-                "image": "https://example.com/image.jpg",
+                "images": ["https://example.com/image.jpg"],
                 "rating": 4.5,
                 "amenities": ["wifi", "ar-condicionado", "mobiliado"],
                 "capacity": 2,
@@ -55,12 +52,13 @@ class Property(BaseModel):
 class PropertyCreate(BaseModel):
     #Modelo para criação de propriedade
     title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
     type: Literal["kitnet", "quarto", "apartamento"]
     price: float = Field(..., gt=0)
     location: str = Field(..., min_length=1, max_length=200)
     university: str = Field(..., min_length=1, max_length=200)
     distance: str = Field(..., min_length=1, max_length=50)
-    image: str = Field(..., min_length=1)
+    images: List[str] = Field(default=[])
     amenities: List[str] = Field(default=[])
     capacity: int = Field(..., gt=0)
 
@@ -68,12 +66,13 @@ class PropertyCreate(BaseModel):
 class PropertyUpdate(BaseModel):
     #Modelo para atualização de propriedade
     title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
     type: Optional[Literal["kitnet", "quarto", "apartamento"]] = None
     price: Optional[float] = Field(None, gt=0)
     location: Optional[str] = Field(None, min_length=1, max_length=200)
     university: Optional[str] = Field(None, min_length=1, max_length=200)
     distance: Optional[str] = Field(None, min_length=1, max_length=50)
-    image: Optional[str] = Field(None, min_length=1)
+    images: List[str] = Field(default=[])
     amenities: Optional[List[str]] = None
     capacity: Optional[int] = Field(None, gt=0)
 

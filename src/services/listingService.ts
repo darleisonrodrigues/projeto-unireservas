@@ -1,5 +1,5 @@
 import { buildUrl, API_CONFIG, ApiResponse } from '@/config/api';
-import { TokenManager } from './authService';
+import { authFirebaseService } from './authFirebaseService';
 import { ListingResponse as Listing } from '@/types/listing';
 
 //tipos para requisições de listings
@@ -8,8 +8,8 @@ export interface CreateListingData {
   title: string;
   description: string;
   price: number;
-  availableFrom: string; // ISO  date string
-  availableUntil?: string; // ISO date string
+  availableFrom: string;
+  availableUntil?: string;
   rules?: string[];
   contact: {
     phone: string;
@@ -47,7 +47,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const token = TokenManager.getToken();
+  const token = authFirebaseService.getToken();
   
   const config: RequestInit = {
     headers: {
@@ -75,7 +75,6 @@ async function apiRequest<T>(
 
 // serviços de listings
 export const listingService = {
-  // listar todos os listings
   async getAll(): Promise<Listing[]> {
     const response = await apiRequest<Listing[]>(
       API_CONFIG.ENDPOINTS.LISTINGS.LIST
@@ -166,7 +165,7 @@ export const listingService = {
       formData.append('images', file);
     });
 
-    const token = TokenManager.getToken();
+    const token = authFirebaseService.getToken();
     const response = await fetch(
       buildUrl(`/listings/${listingId}/upload-images`),
       {

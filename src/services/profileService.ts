@@ -1,131 +1,96 @@
-import { buildUrl, API_CONFIG, ApiResponse } from '@/config/api';
-import { TokenManager } from './authService';
-import { StudentProfile, AdvertiserProfile } from '@/types/profile';
+// Conteúdo FINAL e CORRIGIDO para: projeto-unireservas/src/services/profileService.ts
 
-//tipos unificados para perfil
-export type ProfileData = StudentProfile | AdvertiserProfile;
+import { authFirebaseService } from './authFirebaseService'; // Usando Firebase Auth Service
+import type { AuthResponse } from './authFirebaseService';
 
-export interface UpdateProfileData {
-  name?: string;
-  email?: string;
-  phone?: string;
-  //campos específicos para estudante
-  university?: string;
-  course?: string;
-  semester?: string;
-  bio?: string;
-  preferences?: {
-    maxPrice?: number;
-    preferredLocation?: string;
-    roomType?: string;
-    amenities?: string[];
-  };
-  //campos específicos para anunciante
-  companyName?: string;
-  cnpj?: string;
-  description?: string;
-  website?: string;
-  address?: string;
-}
+const API_BASE_URL = 'http://localhost:8002/api/profiles';
 
-export interface UploadImageResponse {
-  imageUrl: string;
-}
+// Tipo do perfil do usuário
+type UserProfile = AuthResponse['user'];
 
-//função auxiliar para fazer requisições autenticadas
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<ApiResponse<T>> {
-  const token = TokenManager.getToken();
-  
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  try {
-    const response = await fetch(buildUrl(endpoint), config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `Erro ${response.status}`);
+class ProfileService {
+  // Método privado para obter os headers de autenticação
+  private getAuthHeaders() {
+    const token = authFirebaseService.getToken();
+    if (!token) {
+      throw new Error('Usuário não autenticado.');
     }
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  }
 
-    return data;
-  } catch (error) {
-    console.error('Erro na requisição:', error);
-    throw error;
+  // Buscar o perfil do usuario logado
+  async getMyProfile(): Promise<UserProfile> {  //Usa o tipo UserProfile
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao buscar o perfil do usuário.');
+      }
+      
+      const result = await response.json();
+      return result.data || result;
+    } catch (error: unknown) {
+      console.error('Erro ao buscar perfil:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Ocorreu um erro desconhecido ao buscar o perfil.');
+    }
+  }
+
+  // Atualizar o perfil do usuário logado
+  async updateMyProfile(profileData: Partial<UserProfile>): Promise<UserProfile> { 
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar o perfil.');
+      }
+
+      const result = await response.json();
+      return result.data || result;
+    } catch (error: unknown) {
+      console.error('Erro ao atualizar perfil:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Ocorreu um erro desconhecido ao atualizar o perfil.');
+    }
+  }
+
+  // Deletar conta do usuário logado
+  async deleteMyProfile(): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Falha ao deletar a conta: ${errorText}`);
+      }
+
+      // Apos deletar no backend, tambem fazer logout do Firebase
+      await authFirebaseService.logout();
+
+    } catch (error: unknown) {
+      console.error('Erro ao deletar conta:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Ocorreu um erro desconhecido ao deletar a conta.');
+    }
   }
 }
 
-//serviços de perfil
-export const profileService = {
-  //obter perfil do usuário atual
-  async getMyProfile(): Promise<ProfileData> {
-    const response = await apiRequest<ProfileData>(
-      API_CONFIG.ENDPOINTS.PROFILES.GET
-    );
-    return response.data;
-  },
-
-  //obter perfil por ID
-  async getById(id: string): Promise<ProfileData> {
-    const response = await apiRequest<ProfileData>(
-      API_CONFIG.ENDPOINTS.PROFILES.GET_BY_ID(id)
-    );
-    return response.data;
-  },
-
-  //atualizar perfil
-  async updateProfile(data: UpdateProfileData): Promise<ProfileData> {
-    const response = await apiRequest<ProfileData>(
-      API_CONFIG.ENDPOINTS.PROFILES.UPDATE,
-      {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }
-    );
-    return response.data;
-  },
-
-  //upload de imagem do perfil
-  async uploadProfileImage(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const token = TokenManager.getToken();
-    const response = await fetch(
-      buildUrl(API_CONFIG.ENDPOINTS.PROFILES.UPLOAD_IMAGE),
-      {
-        method: 'POST',
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Erro no upload da imagem');
-    }
-
-    const result: ApiResponse<UploadImageResponse> = await response.json();
-    return result.data.imageUrl;
-  },
-
-  //deletar conta
-  async deleteAccount(): Promise<void> {
-    await apiRequest(
-      API_CONFIG.ENDPOINTS.PROFILES.GET, // Usar o mesmo endpoint com DELETE
-      {
-        method: 'DELETE',
-      }
-    );
-  },
-};
+export const profileService = new ProfileService();

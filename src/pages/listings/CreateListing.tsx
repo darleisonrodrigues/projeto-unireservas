@@ -1,12 +1,15 @@
-import { useState } from "react";
-import { Camera, MapPin, Plus, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Camera, MapPin, Plus, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { ListingFormData, PropertyType } from "@/types/listing";
+import { propertyService } from "@/services/propertyService";
 
 const AMENITIES = [
   { id: "wifi", label: "Wi-Fi", value: "wifi" },
@@ -17,11 +20,21 @@ const AMENITIES = [
 ];
 
 const CreateListing = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<ListingFormData>>({
     amenities: [],
     photos: []
   });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Limpa as URLs de objeto quando o componente é desmontado para evitar vazamentos de memória
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -59,6 +72,8 @@ const CreateListing = () => {
   };
 
   const removePhoto = (index: number) => {
+    // Revoga a URL do objeto para liberar memória
+    URL.revokeObjectURL(previewUrls[index]);
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     setFormData(prev => ({
       ...prev,
@@ -68,41 +83,71 @@ const CreateListing = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validação básica
-    if (!formData.title || !formData.type || !formData.price) {
-      alert("Por favor, preencha todos os campos obrigatórios");
+    if (!formData.title || !formData.type || !formData.price || !formData.university || !formData.address) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
       return;
     }
 
+    if (!formData.capacity || Number(formData.capacity) <= 0) {
+      toast({
+        title: "Capacidade inválida",
+        description: "A capacidade deve ser um número maior que zero.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      // TODO: Integração com o backend
-      console.log("Dados do formulário:", formData);
-      
-      // Exemplo de como seria a integração com o backend:
-      // const formDataToSend = new FormData();
-      // Object.entries(formData).forEach(([key, value]) => {
-      //   if (key === 'photos') {
-      //     value.forEach((photo: File) => {
-      //       formDataToSend.append('photos', photo);
-      //     });
-      //   } else {
-      //     formDataToSend.append(key, value);
-      //   }
-      // });
-      
-      // const response = await fetch('/api/listings', {
-      //   method: 'POST',
-      //   body: formDataToSend
-      // });
-      
-      // if (response.ok) {
-      //   // Redirecionar para a página do anúncio
-      //   window.location.href = '/';
-      // }
+      // Criar a propriedade com os dados do formulário (sem imagens)
+      console.log("Enviando dados da propriedade para o backend...");
+      const propertyData = {
+        title: formData.title,
+        type: formData.type as PropertyType,
+        price: Number(formData.price),
+        location: `${formData.neighborhood ? formData.neighborhood + ', ' : ''}${formData.address}`,
+        university: formData.university,
+        distance: formData.distance || 'Não informado',
+        amenities: formData.amenities || [],
+        capacity: Number(formData.capacity),
+        description: formData.description || '',
+        images: [] // A API irá inicializar este campo
+      };
+
+      const newProperty = await propertyService.create(propertyData);
+      console.log("Propriedade criada com sucesso:", newProperty);
+
+      // Fazer o upload das imagens para a propriedade recém-criada, se houver
+      if (formData.photos && formData.photos.length > 0) {
+        console.log(`Enviando ${formData.photos.length} fotos para a propriedade ID: ${newProperty.id}`);
+        await propertyService.uploadImages(newProperty.id, formData.photos);
+        console.log("Upload de imagens concluído!");
+      }
+
+      toast({
+        title: "Anúncio criado com sucesso!",
+        description: "Seu imóvel já está visível para os estudantes.",
+      });
+
+      // Redirecionar para a página de perfil
+      navigate('/profile?tab=imoveis');
+
     } catch (error) {
       console.error("Erro ao criar anúncio:", error);
-      alert("Erro ao criar anúncio. Tente novamente.");
+      toast({
+        title: "Erro ao criar anúncio",
+        description: error instanceof Error ? error.message : "Erro desconhecido. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -122,7 +167,6 @@ const CreateListing = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Informações básicas */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Informações Básicas</h2>
               <div className="space-y-4">
@@ -137,7 +181,6 @@ const CreateListing = () => {
                     required
                   />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="type">Tipo de imóvel</Label>
@@ -155,7 +198,6 @@ const CreateListing = () => {
                       <option value="apartamento">Apartamento</option>
                     </select>
                   </div>
-
                   <div>
                     <Label htmlFor="price">Valor do aluguel (R$)</Label>
                     <Input
@@ -170,7 +212,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <Label htmlFor="description">Descrição do imóvel</Label>
                   <Textarea
@@ -205,7 +246,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="neighborhood">Bairro</Label>
@@ -218,7 +258,6 @@ const CreateListing = () => {
                       required
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="university">Universidade próxima</Label>
                     <Input
@@ -231,7 +270,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <Label htmlFor="distance">Distância até a universidade</Label>
                   <Input
@@ -263,7 +301,6 @@ const CreateListing = () => {
                     required
                   />
                 </div>
-
                 <div>
                   <Label className="block mb-2">Comodidades</Label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -292,7 +329,7 @@ const CreateListing = () => {
                     <div key={index} className="relative group aspect-square">
                       <img
                         src={url}
-                        alt={`Foto ${index + 1}`}
+                        alt={`Preview ${index + 1}`}
                         className="w-full h-full object-cover rounded-lg"
                       />
                       <button
@@ -330,12 +367,20 @@ const CreateListing = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.history.back()}
+                onClick={() => navigate(-1)} // Navega para a página anterior
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary">
-                Publicar anúncio
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Publicando...
+                  </>
+                ) : (
+                  "Publicar anúncio"
+                )}
               </Button>
             </div>
           </form>

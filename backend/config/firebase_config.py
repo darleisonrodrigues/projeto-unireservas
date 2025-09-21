@@ -3,7 +3,7 @@ Configuração do Firebase Firestore
 """
 
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, storage # 1. Adicionar 'storage'
 from config.settings import settings
 import json
 import os
@@ -12,14 +12,14 @@ import os
 def initialize_firebase():
     if not firebase_admin._apps:
         try:
-            # Verifica se tem arquivo de credenciais ou usa variáveis de ambiente
-            cred_path = os.path.join(os.path.dirname(__file__), '..', 'firebase-credentials.json')
-            
+            # Usar o arquivo de credenciais do Firebase Admin SDK
+            cred_path = os.path.join(os.path.dirname(__file__), '..', 'uni-reservas-firebase-adminsdk-fbsvc-8a0171475a.json')
+
             if os.path.exists(cred_path):
-                # Usar arquivo de credenciais
                 cred = credentials.Certificate(cred_path)
+                print(f"Usando credenciais do arquivo: {cred_path}")
             else:
-                # Usar variáveis de ambiente
+                # Logica de variáveis de ambiente
                 firebase_config = {
                     "type": "service_account",
                     "project_id": settings.FIREBASE_PROJECT_ID,
@@ -34,28 +34,40 @@ def initialize_firebase():
                 }
                 cred = credentials.Certificate(firebase_config)
             
-            firebase_admin.initialize_app(cred)
-            print("✅ Firebase inicializado com sucesso!")
+            # Adicionar a configuração do Storage Bucket
+            firebase_admin.initialize_app(cred, {
+                'storageBucket': f"{settings.FIREBASE_PROJECT_ID}.firebasestorage.app"
+            })
+            print("Firebase inicializado com sucesso!")
         except Exception as e:
-            print(f"❌ Erro ao inicializar Firebase: {e}")
-            # Para desenvolvimento, continue sem Firebase
-            pass
+            print(f"Erro ao inicializar Firebase: {e}")
+            raise e
 
-    #Retorna o cliente do Firestore
+#Retorna o cliente do Firestore
 def get_firestore_client():
     try:
         if not firebase_admin._apps:
             initialize_firebase()
         return firestore.client()
     except Exception as e:
-        print(f"❌ Erro ao obter cliente Firestore: {e}")
+        print(f"Erro ao obter cliente Firestore: {e}")
         return None
 
+#Adicionar uma funçao para obter o bucket do storage
+def get_storage_bucket():
+    """Retorna a instância do bucket do Firebase Storage."""
+    try:
+        if not firebase_admin._apps:
+            initialize_firebase()
+        return storage.bucket()
+    except Exception as e:
+        print(f"Erro ao obter storage bucket: {e}")
+        return None
 
-# Instância global do cliente Firestore
+# Instancia global do cliente Firestore
 db = None
 
-#Retorna a instância do banco de dados
+#Retorna a instancia do banco de dados
 def get_db():
     global db
     if db is None:

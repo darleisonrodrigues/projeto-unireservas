@@ -4,32 +4,40 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  profile_image?: string;
   profileImage?: string;
-  userType: 'cliente' | 'anunciante';
-  createdAt: Date;
-  updatedAt: Date;
+  userType: 'student' | 'advertiser';
+  user_type?: 'student' | 'advertiser'; // para compatibilidade backend
+  created_at?: string;
+  updated_at?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  is_active?: boolean;
 }
 
 export interface StudentProfile extends User {
-  userType: 'cliente';
+  userType: 'student';
   university: string;
   course: string;
   semester: string;
   bio?: string;
   preferences: StudentPreferences;
-  favoriteProperties: string[];
+  favorite_properties?: string[];
+  favoriteProperties?: string[];
 }
 
 export interface AdvertiserProfile extends User {
-  userType: 'anunciante';
-  companyName: string;
+  userType: 'advertiser';
+  company_name: string;
+  companyName?: string; // para compatibilidade frontend
   cnpj: string;
   description: string;
   address: string;
   website?: string;
   verified: boolean;
   rating: number;
-  totalProperties: number;
+  total_properties?: number;
+  totalProperties?: number; // para compatibilidade frontend
   properties: string[];
 }
 

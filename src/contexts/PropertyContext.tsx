@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useMemo, ReactNode, useEffect } from 'react';
 import { Property, FilterState, SortOption } from '@/types/property';
 import { propertyService } from '@/services/propertyService';
+import { authFirebaseService } from '@/services/authFirebaseService';
+import { useAuth } from '@/hooks/useAuth';
 
 // Importar dados mockados - fallback caso o backend não esteja disponível
 import kitnetImage from "@/assets/kitnet-1.jpg";
@@ -18,7 +20,7 @@ interface PropertyContextType {
   error: string | null;
   updateFilter: (key: keyof FilterState, value: string | string[] | number | null) => void;
   resetFilters: () => void;
-  toggleFavorite: (propertyId: string) => void;
+  toggleFavorite: (propertyId: string) => Promise<void>;
   refreshProperties: () => Promise<void>;
 }
 
@@ -197,18 +199,29 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  // Carregar propriedades na inicialização
+  // Carregar propriedades na inicialização e quando usuário mudar
   useEffect(() => {
     loadProperties();
-  }, []);
+  }, [user]); // Recarregar quando user mudar (login/logout)
 
   const loadProperties = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await propertyService.getAll();
-      setProperties(data);
+      const data = await propertyService.getAllProperties();
+
+      // Transformar dados do backend para formato do frontend
+      const transformedProperties = data.map(property => ({
+        ...property,
+        // Compatibilidade: o PropertyCard espera 'image' (singular) e 'isFavorited'
+        image: property.images && property.images.length > 0 ? property.images[0] : undefined,
+        isFavorited: property.is_favorited
+      }));
+
+      console.log('Propriedades carregadas do backend:', transformedProperties.length);
+      setProperties(transformedProperties);
     } catch (err) {
       console.error('Erro ao carregar propriedades:', err);
       setError('Erro ao carregar propriedades. Usando dados de demonstração.');
@@ -231,14 +244,63 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
     setFilters(initialFilters);
   };
 
-  const toggleFavorite = (propertyId: string) => {
-    setProperties(prev => 
-      prev.map(property => 
-        property.id === propertyId 
-          ? { ...property, isFavorited: !property.isFavorited }
-          : property
-      )
-    );
+  const toggleFavorite = async (propertyId: string) => {
+    try {
+      // Verificar estado atual do favorito (antes da mudança local)
+      const currentProperty = properties.find(p => p.id === propertyId);
+      const willBeFavorited = !(currentProperty?.isFavorited || false);
+
+      // Primeiro atualizar localmente para resposta imediata
+      setProperties(prev =>
+        prev.map(property =>
+          property.id === propertyId
+            ? { ...property, isFavorited: willBeFavorited, is_favorited: willBeFavorited }
+            : property
+        )
+      );
+
+      // Chamar a API correspondente
+      const token = authFirebaseService.getToken();
+      if (!token) {
+        console.error('Usuário não está logado');
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:8002/api/properties/${propertyId}/favorite`,
+        {
+          method: willBeFavorited ? 'POST' : 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Se falhar, reverter o estado local
+        setProperties(prev =>
+          prev.map(property =>
+            property.id === propertyId
+              ? { ...property, isFavorited: !willBeFavorited, is_favorited: !willBeFavorited }
+              : property
+          )
+        );
+        console.error('Erro ao atualizar favorito:', await response.text());
+      } else {
+        console.log('Favorito atualizado com sucesso');
+      }
+    } catch (error) {
+      // Se falhar, reverter o estado local
+      setProperties(prev =>
+        prev.map(property =>
+          property.id === propertyId
+            ? { ...property, isFavorited: !willBeFavorited, is_favorited: !willBeFavorited }
+            : property
+        )
+      );
+      console.error('Erro ao conectar com o servidor:', error);
+    }
   };
 
   //logica de filtros

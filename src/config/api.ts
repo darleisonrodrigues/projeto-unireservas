@@ -1,14 +1,21 @@
 // Configuração da API
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000',
+  BASE_URL: 'http://localhost:8002',
   ENDPOINTS: {
-    // Autenticaçao
+    // Autenticaçao (JWT tradicional)
     AUTH: {
       REGISTER: '/api/auth/register',
       LOGIN: '/api/auth/login',
       VERIFY_TOKEN: '/api/auth/verify-token',
       REFRESH_TOKEN: '/api/auth/refresh',
       LOGOUT: '/api/auth/logout'
+    },
+    // Autenticação Firebase
+    AUTH_FIREBASE: {
+      REGISTER: '/api/auth-firebase/register',
+      VERIFY_TOKEN: '/api/auth-firebase/verify-token',
+      ME: '/api/auth-firebase/me',
+      LOGOUT: '/api/auth-firebase/logout'
     },
     // Propriedades
     PROPERTIES: {

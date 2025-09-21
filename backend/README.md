@@ -1,14 +1,13 @@
 # UniReservas Backend
 
-Em-Desenvolvimento
+Em-Desenvolvimento 95%
 Backend Python com FastAPI e Firebase Firestore para o sistema de reservas.
 
 ## 🚀 Tecnologias
 
 - **FastAPI** - Framework web moderno e rápido
-- **Firebase Firestore** - Banco de dados NoSQL em tempo real
+- **Firebase Firestore** - Banco de dados NoSQL em tempo real (Adicionado auth por token)
 - **Pydantic** - Validação de dados e serialização
-- **JWT** - Autenticação com tokens
 - **Python 3.8+** - Linguagem de programação
 
 ## 📁 Estrutura do Projeto
@@ -21,27 +20,37 @@ backend/
 │   └── settings.py           # Configurações da aplicação
 ├── models/
 │   ├── __init__.py
-│   ├── property.py          # Modelos de propriedades
-│   ├── listing.py           # Modelos de listings
-│   └── profile.py           # Modelos de usuários
+│   ├── property.py           # Modelos de propriedades
+│   ├── listing.py            # Modelos de anúncios
+│   └── profile.py            # Modelos de usuários
 ├── services/
 │   ├── __init__.py
-│   ├── property_service.py  # Lógica de negócio para propriedades
-│   ├── listing_service.py   # Lógica de negócio para listings
-│   └── profile_service.py   # Lógica de negócio para usuários
+│   ├── property_service.py   # Lógica de negócio para propriedades
+│   ├── listing_service.py    # Lógica de negócio para anúncios
+│   └── profile_service.py    # Lógica de negócio para usuários
 ├── routers/
 │   ├── __init__.py
-│   ├── auth.py             # Rotas de autenticação
-│   ├── properties.py       # Rotas de propriedades
-│   ├── listings.py         # Rotas de listings
-│   └── profiles.py         # Rotas de perfis
+│   ├── auth.py               # Rotas de autenticação
+│   ├── properties.py         # Rotas de propriedades
+│   ├── listings.py           # Rotas de anúncios
+│   └── profiles.py           # Rotas de perfis
+├── testes_realizados/
+│   ├── check_emails.py       # Testes de email
+│   ├── clear_users.py        # Limpeza de usuários
+│   ├── populate_database.py  # Popular banco de dados
+│   ├── test_api.py           # Testes de API
+│   ├── test_database.py      # Testes de banco
+│   └── test_register.py      # Testes de registro
 ├── utils/
 │   ├── __init__.py
-│   └── auth.py             # Utilitários de autenticação
-├── main.py                 # Aplicação principal
-├── requirements.txt        # Dependências Python
-├── .env.example           # Exemplo de variáveis de ambiente
-└── README.md              # Este arquivo
+│   └── auth.py               # Utilitários de autenticação
+├── main.py                   # Aplicação principal
+├── run.py                    # Script de execução
+├── requirements.txt          # Dependências Python
+├── .env.example              # Exemplo de variáveis de ambiente
+├── INSTRUCOES.md             # Instruções de uso
+├── README.md                 # Este arquivo
+└── Makefile                  # Comandos automatizados
 ```
 
 ## 🔧 Configuração
@@ -98,13 +107,13 @@ cd backend
 python main.py
 
 # OU usando uvicorn diretamente
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8002
 ```
 
 O servidor estará disponível em:
-- **API**: http://localhost:8000
-- **Documentação**: http://localhost:8000/docs
-- **Redoc**: http://localhost:8000/redoc
+- **API**: http://localhost:8002
+- **Documentação**: http://localhost:8002/docs
+- **Redoc**: http://localhost:8002/redoc
 
 ## 📚 API Endpoints
 
@@ -138,14 +147,6 @@ O servidor estará disponível em:
 - `POST /api/profiles/favorites/{property_id}` - Adicionar favorito
 - `DELETE /api/profiles/favorites/{property_id}` - Remover favorito
 - `GET /api/profiles/favorites/list` - Listar favoritos
-
-## 🔐 Autenticação
-
-O sistema usa JWT (JSON Web Tokens) para autenticação. Após o login, inclua o token no header:
-
-```
-Authorization: Bearer SEU_TOKEN_AQUI
-```
 
 ## 👥 Tipos de Usuário
 

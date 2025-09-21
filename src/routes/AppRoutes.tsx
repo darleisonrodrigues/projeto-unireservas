@@ -11,9 +11,11 @@ import RegisterPage from "@/pages/auth/RegisterPage";
 
 // Propriedades
 import PropertiesListPage from "@/pages/properties/PropertiesListPage";
+import PropertyDetailsPage from "@/pages/properties/PropertyDetailsPage";
 
 // Listings (anúncios)
 import CreateListing from "@/pages/listings/CreateListing";
+import EditListing from "@/pages/listings/EditListing";
 
 // Perfil
 import ProfilePage from "@/pages/profile/ProfilePage";
@@ -28,6 +30,7 @@ import FAQPage from "@/pages/legal/FAQPage";
  * Sistema de roteamento centralizado
  * Organizado por contexto/funcionalidade para facilitar manutenção
  */
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -41,10 +44,12 @@ const AppRoutes = () => {
       {/* Propriedades */}
       <Route path={ROUTES.PROPERTIES.LIST} element={<PropertiesListPage />} />
       <Route path={ROUTES.PROPERTIES.SEARCH} element={<PropertiesListPage />} />
+      <Route path={ROUTES.PROPERTIES.DETAILS(':id')} element={<PropertyDetailsPage />} />
       <Route path={ROUTES.PROPERTIES.FAVORITES} element={<div>Favoritos - Em desenvolvimento</div>} />
       
       {/* Listings (anúncios) */}
       <Route path={ROUTES.LISTINGS.CREATE} element={<CreateListing />} />
+      <Route path={ROUTES.LISTINGS.EDIT(':id')} element={<EditListing />} />
       
       {/* Perfis */}
       <Route path={ROUTES.PROFILE.CLIENT} element={<ProfilePage />} />

@@ -1,188 +1,128 @@
-"""
-Rotas para perfis de usuário
-"""
+# Conteúdo FINAL e CORRIGIDO para: projeto-unireservas/backend/routers/profiles.py
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Union
-
-from models.profile import (
-    StudentProfile, AdvertiserProfile, ProfileUpdateRequest, ApiResponse
-)
-from services.profile_service import ProfileService
-from utils.auth import get_current_active_user, get_current_student
-
+from datetime import datetime, timezone
+from services.profile_service import ProfileService, UserProfile
+from models.profile import (ApiResponse,ProfileUpdateRequest,StudentProfile,AdvertiserProfile)
+from utils.firebase_auth import get_current_user_firebase
 
 router = APIRouter()
 profile_service = ProfileService()
 
+@router.get("/me", response_model=ApiResponse)
+async def get_my_profile(current_user: UserProfile = Depends(get_current_user_firebase)):
+    """Retorna o perfil do usuário atualmente logado."""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado."
+        )
+    
+    user_data = current_user.model_dump()
+    if 'user_type' in user_data:
+        user_data['userType'] = user_data.pop('user_type')
 
-@router.get("/me", response_model=Union[StudentProfile, AdvertiserProfile])
-async def get_my_profile(
-    current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_active_user)
-):
-    """Obter perfil do usuário atual"""
-    return current_user
+    return ApiResponse(success=True, data=user_data)
 
 
-@router.put("/me", response_model=Union[StudentProfile, AdvertiserProfile])
+@router.put("/me", response_model=ApiResponse)
 async def update_my_profile(
-    profile_data: ProfileUpdateRequest,
-    current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_active_user)
+    update_data: ProfileUpdateRequest,
+    current_user: UserProfile = Depends(get_current_user_firebase)
 ):
-    #Atualizar perfil do usuário atual
-    try:
-        updated_profile = profile_service.update_profile(current_user.id, profile_data)
-        if not updated_profile:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Perfil não encontrado"
-            )
-        return updated_profile
-    except Exception as e:
+    if not current_user:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar perfil: {str(e)}"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado."
         )
 
-
-@router.get("/{user_id}", response_model=Union[StudentProfile, AdvertiserProfile])
-async def get_user_profile(user_id: str):
-    try:
-        user_profile = profile_service.get_user_by_id(user_id)
-        if not user_profile:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuário não encontrado"
-            )
-        
-        # Remover informações sensíveis para visualização pública
-        if isinstance(user_profile, StudentProfile):
-            # Para estudantes, manter apenas informações básicas
-            public_profile = StudentProfile(
-                id=user_profile.id,
-                name=user_profile.name,
-                email="",  # Não mostrar email
-                phone="",  # Não mostrar telefone
-                profile_image=user_profile.profile_image,
-                user_type=user_profile.user_type,
-                university=user_profile.university,
-                course=user_profile.course,
-                semester=user_profile.semester,
-                bio=user_profile.bio,
-                created_at=user_profile.created_at,
-                updated_at=user_profile.updated_at,
-                is_active=user_profile.is_active,
-                preferences=user_profile.preferences,
-                favorite_properties=[]  # Não mostrar favoritos
-            )
-            return public_profile
-        else:
-            # Para anunciantes, mostrar informações de contato
-            return user_profile
-            
-    except HTTPException:
-        raise
-    except Exception as e:
+    # Converte os dados recebidos para um dicionário, excluindo valores nulos
+    update_dict = update_data.model_dump(exclude_unset=True, by_alias=True)
+    if not update_dict:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao buscar perfil: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum dado fornecido para atualização."
         )
 
-
-@router.post("/favorites/{property_id}", response_model=ApiResponse)
-async def add_favorite_property(
-    property_id: str,
-    current_user: StudentProfile = Depends(get_current_student)
-):
-    try:
-        success = profile_service.add_favorite_property(current_user.id, property_id)
-        if not success:
+    # Se o email está sendo alterado, precisa atualizar no Firebase Auth também
+    if "email" in update_dict and update_dict["email"] != current_user.email:
+        try:
+            from firebase_admin import auth as fb_auth
+            fb_auth.update_user(current_user.firebase_uid, email=update_dict["email"])
+            print(f"[PROFILE] Email atualizado no Firebase Auth: {update_dict['email']}")
+        except Exception as e:
+            print(f"[PROFILE] Erro ao atualizar email no Firebase Auth: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível adicionar aos favoritos"
+                detail=f"Erro ao atualizar email: {str(e)}"
             )
-        
-        return ApiResponse(
-            success=True,
-            message="Propriedade adicionada aos favoritos"
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
+
+    # Adiciona a data de atualização
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+
+    db = profile_service._get_db()
+    if not db:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao adicionar favorito: {str(e)}"
+            detail="Banco de dados não disponível."
         )
 
+    # Atualiza o documento no Firestore
+    user_ref = db.collection("users").document(current_user.id)
+    user_ref.update(update_dict)
 
-@router.delete("/favorites/{property_id}", response_model=ApiResponse)
-async def remove_favorite_property(
-    property_id: str,
-    current_user: StudentProfile = Depends(get_current_student)
-):
-    try:
-        success = profile_service.remove_favorite_property(current_user.id, property_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível remover dos favoritos"
-            )
-        
-        return ApiResponse(
-            success=True,
-            message="Propriedade removida dos favoritos"
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
+    # Busca o documento atualizado para retornar
+    updated_user_doc = user_ref.get()
+    if not updated_user_doc.exists:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao remover favorito: {str(e)}"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Falha ao recuperar perfil atualizado."
         )
+    
+    updated_user_data = updated_user_doc.to_dict()
 
+    return ApiResponse(
+        success=True,
+        message="Perfil atualizado com sucesso.",
+        data=updated_user_data
+    )
 
-@router.get("/favorites/list")
-async def get_favorite_properties(
-    current_user: StudentProfile = Depends(get_current_student)
-):
-    try:
-        favorites = profile_service.get_user_favorites(current_user.id)
-        return {
-            "user_id": current_user.id,
-            "favorite_properties": favorites,
-            "total": len(favorites)
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao buscar favoritos: {str(e)}"
-        )
-
-
+    #Deleta o perfil do usuário logado do Firestore e Firebase Auth
 @router.delete("/me", response_model=ApiResponse)
-async def deactivate_my_account(
-    current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_active_user)
-):
+async def delete_my_profile(current_user: UserProfile = Depends(get_current_user_firebase)):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado."
+        )
+
     try:
-        success = profile_service.deactivate_user(current_user.id)
-        if not success:
+        # Importa o Firebase Admin auth aqui para evitar dependências circulares
+        from firebase_admin import auth as fb_auth
+
+        db = profile_service._get_db()
+        if not db:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Não foi possível desativar a conta"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Banco de dados não disponível."
             )
-        
+
+        # Deleta o usuário do Firestore
+        user_ref = db.collection("users").document(current_user.id)
+        user_ref.delete()
+
+        # Deleta o usuário do Firebase Authentication
+        fb_auth.delete_user(current_user.firebase_uid)
+
         return ApiResponse(
             success=True,
-            message="Conta desativada com sucesso"
+            message="Conta deletada com sucesso."
         )
-        
-    except HTTPException:
-        raise
+
     except Exception as e:
+        print(f"[ERRO] Falha ao deletar usuário: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao desativar conta: {str(e)}"
+            detail=f"Erro ao deletar conta: {str(e)}"
         )

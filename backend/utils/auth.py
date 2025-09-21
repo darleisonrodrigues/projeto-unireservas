@@ -1,13 +1,9 @@
-"""
-Utilitários para autenticação JWT
-"""
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-
 from config.settings import settings
 from services.profile_service import ProfileService
 from models.profile import StudentProfile, AdvertiserProfile
@@ -82,7 +78,7 @@ def get_current_student(
     current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_active_user)
 ) -> StudentProfile:
     #Obter estudante atual (apenas estudantes)
-    if current_user.user_type != "cliente":
+    if current_user.user_type != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso restrito a estudantes"
@@ -94,7 +90,7 @@ def get_current_advertiser(
     current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_active_user)
 ) -> AdvertiserProfile:
     #Obter anunciante atual (apenas anunciantes)
-    if current_user.user_type != "anunciante":
+    if current_user.user_type != "advertiser":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso restrito a anunciantes"

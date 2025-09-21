@@ -7,6 +7,7 @@ import AppRoutes from "@/routes/AppRoutes";
 import { PropertyProvider } from "@/contexts/PropertyContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 
+
 const queryClient = new QueryClient();
 
 const App = () => (

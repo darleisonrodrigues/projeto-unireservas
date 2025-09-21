@@ -1,101 +1,114 @@
-import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
-import { authService, AuthResponse, RegisterData } from '@/services/authService';
+// projeto-unireservas/src/context/AuthContext.tsx
 
-//tipos do contexto de autenticação
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { authFirebaseService, AuthResponse, LoginCredentials, RegisterData } from "@/services/authFirebaseService";
+
 interface AuthContextType {
-  user: AuthResponse['user'] | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  user: AuthResponse["user"] | null;
+  loading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  isAuthenticated: boolean;
+  isProviderAvailable: (providerId: 'google.com' | 'apple.com') => Promise<boolean>;
 }
 
-//criar contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider do contexto de autenticação
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthResponse['user'] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<AuthResponse["user"] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  //verificar autenticação na inicialização
+  // Inicializa verificando se há sessão válida
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      setIsLoading(true);
-      
-      //verificar se há token armazenado
-      if (!authService.isAuthenticated()) {
-        setUser(null);
-        return;
-      }
-
-      // verificar se o token é válido
-      const result = await authService.verifyToken();
+    const initAuth = async () => {
+      setLoading(true);
+      const result = await authFirebaseService.verifyToken();
       if (result.valid && result.user) {
         setUser(result.user);
       } else {
-        // token inválido, fazer logout
-        await authService.logout();
         setUser(null);
       }
-    } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
-      await authService.logout();
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      setLoading(false);
+    };
+    initAuth();
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: LoginCredentials) => {
+    setLoading(true);
     try {
-      const response = await authService.login({ email, password });
+      const response = await authFirebaseService.login(credentials);
       setUser(response.user);
-    } catch (error) {
-      console.error('Erro no login:', error);
-      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const register = async (data: RegisterData) => {
+    setLoading(true);
     try {
-      const response = await authService.register(data);
+      const response = await authFirebaseService.register(data);
       setUser(response.user);
-    } catch (error) {
-      console.error('Erro no registro:', error);
-      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const response = await authFirebaseService.loginWithGoogle();
+      setUser(response.user);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithApple = async () => {
+    setLoading(true);
+    try {
+      const response = await authFirebaseService.loginWithApple();
+      setUser(response.user);
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
+    setLoading(true);
     try {
-      await authService.logout();
+      await authFirebaseService.logout();
       setUser(null);
-    } catch (error) {
-      console.error('Erro no logout:', error);
-      // mesmo com erro, limpar estado local
-      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    register,
-    logout,
-    checkAuth,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        loginWithGoogle,
+        loginWithApple,
+        register,
+        logout,
+        isAuthenticated: !!user,
+        isProviderAvailable: authFirebaseService.isProviderAvailable.bind(authFirebaseService),
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Exportar contexto para uso em hook separado
-export { AuthContext };
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
+};
