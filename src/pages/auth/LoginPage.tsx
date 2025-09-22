@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { ROUTES } from "@/config/routes";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthFirebase } from "@/contexts/AuthFirebaseContext";
 import { Separator } from "@/components/ui/separator";
 
 interface LoginFormData {
@@ -33,7 +33,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithApple } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuthFirebase();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,10 +74,10 @@ const LoginPage = () => {
 
     try {
       console.log("Starting login process...");
-      await login({
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-      });
+      await login(
+        formData.email.trim().toLowerCase(),
+        formData.password
+      );
 
       console.log("✅ Login successful");
 

@@ -12,7 +12,7 @@ print("Iniciando Backend...")
 initialize_firebase()
 
 # Importar rotas após inicialização do Firebase
-from routers import properties, listings, profiles, auth, auth_firebase, rentals
+from routers import properties, listings, profiles, auth, auth_firebase, rentals, reservations, chat
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,7 +29,7 @@ app = FastAPI(
 
 # Incluir rotas
 print("Registrando rotas...")
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication JWT"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication JWT"]) # rota desativada
 print("Rota JWT registrada")
 app.include_router(auth_firebase.router, prefix="/api/auth-firebase", tags=["Authentication Firebase"])
 print("Rota Firebase registrada")
@@ -41,6 +41,10 @@ app.include_router(profiles.router, prefix="/api/profiles", tags=["Profiles"])
 print("Rota Profiles registrada")
 app.include_router(rentals.router, prefix="/api/rentals", tags=["Rentals"])
 print("Rota Rentals registrada")
+app.include_router(reservations.router, prefix="/api/reservations", tags=["Reservations"])
+print("Rota Reservations registrada")
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+print("Rota Chat registrada")
 
 # Configuração CORS
 origins = [
@@ -97,6 +101,6 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8002,
+        port=8000,
         reload=False
     )

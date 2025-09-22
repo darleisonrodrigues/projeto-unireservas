@@ -11,21 +11,24 @@ import Header from "@/components/Header";
 import { Property } from "@/types/property";
 import { propertyService } from "@/services/propertyService";
 import { useProperties } from "@/hooks/useProperties";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthFirebase } from "@/contexts/AuthFirebaseContext";
 import { rentalService } from "@/services/rentalService";
+import ReservationModal from "@/components/ReservationModal";
+import InterestModal from "@/components/InterestModal";
 
 const PropertyDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { toggleFavorite } = useProperties();
-  const { user } = useAuth();
+  const { user } = useAuthFirebase();
 
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isInterestedLoading, setIsInterestedLoading] = useState(false);
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [showInterestModal, setShowInterestModal] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -68,7 +71,7 @@ const PropertyDetailsPage = () => {
     } : null);
   };
 
-  const handleInterest = async () => {
+  const handleInterest = () => {
     if (!user) {
       toast({
         title: "Login necessário",
@@ -81,26 +84,7 @@ const PropertyDetailsPage = () => {
 
     if (!property) return;
 
-    setIsInterestedLoading(true);
-
-    try {
-      await rentalService.expressInterest(property.id, "Tenho interesse neste imóvel!");
-
-      toast({
-        title: "Interesse demonstrado!",
-        description: "O anunciante foi notificado sobre seu interesse.",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('Erro ao demonstrar interesse:', error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível demonstrar interesse. Tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsInterestedLoading(false);
-    }
+    setShowInterestModal(true);
   };
 
   const handleShare = async () => {
@@ -343,27 +327,29 @@ const PropertyDetailsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Interessado?
+                  {user?.userType === 'student' ? 'Reservar ou Demonstrar Interesse' : 'Entrar em Contato'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {user?.userType === 'student' && (
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    onClick={() => setShowReservationModal(true)}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Fazer Reserva
+                  </Button>
+                )}
+
                 <Button
                   size="lg"
+                  variant="outline"
                   className="w-full"
                   onClick={handleInterest}
-                  disabled={isInterestedLoading}
                 >
-                  {isInterestedLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Demonstrar Interesse
-                    </>
-                  )}
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {user?.userType === 'student' ? 'Demonstrar Interesse' : 'Entrar em Contato'}
                 </Button>
 
                 <div className="text-sm text-muted-foreground">
@@ -371,7 +357,12 @@ const PropertyDetailsPage = () => {
                     <Shield className="w-4 h-4" />
                     <span>Resposta rápida garantida</span>
                   </div>
-                  <p>O anunciante será notificado sobre seu interesse e entrará em contato em breve.</p>
+                  <p>
+                    {user?.userType === 'student'
+                      ? 'Faça uma reserva para garantir suas datas ou demonstre interesse para mais informações.'
+                      : 'O anunciante será notificado sobre seu interesse e entrará em contato em breve.'
+                    }
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -433,6 +424,31 @@ const PropertyDetailsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de reserva */}
+      {showReservationModal && property && (
+        <ReservationModal
+          property={property}
+          isOpen={showReservationModal}
+          onClose={() => setShowReservationModal(false)}
+          onSuccess={() => {
+            console.log('Reserva criada com sucesso na página de detalhes!');
+            // Aqui você pode adicionar alguma ação após sucesso, como navegar para o perfil
+          }}
+        />
+      )}
+
+      {/* Modal de demonstração de interesse */}
+      {showInterestModal && property && (
+        <InterestModal
+          property={property}
+          isOpen={showInterestModal}
+          onClose={() => setShowInterestModal(false)}
+          onSuccess={() => {
+            console.log('Interesse demonstrado com sucesso!');
+          }}
+        />
+      )}
     </div>
   );
 };

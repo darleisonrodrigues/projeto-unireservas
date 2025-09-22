@@ -34,5 +34,18 @@ export type Property = {
 
   // Propriedades para compatibilidade com PropertyCard
   image?: string;
-  isFavorited?: boolean; 
+  isFavorited?: boolean;
+};
+
+// Tipos para filtragem
+export type SortOption = 'relevancia' | 'menor-preco' | 'maior-preco' | 'melhor-avaliado' | 'mais-recente';
+
+export type FilterState = {
+  propertyType: string;
+  priceRange: string;
+  maxPrice: number | null;
+  location: string;
+  sortBy: SortOption;
+  searchTerm: string;
+  amenities: string[];
 };

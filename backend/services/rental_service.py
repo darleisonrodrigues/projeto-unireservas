@@ -79,7 +79,6 @@ class RentalService:
         interests = []
         docs = db.collection(self.interests_collection)\
             .where("student_id", "==", student_id)\
-            .order_by("created_at", direction=firestore.Query.DESCENDING)\
             .stream()
 
         for doc in docs:
@@ -91,6 +90,9 @@ class RentalService:
                 interest_data["property"] = property_doc.to_dict()
 
             interests.append(interest_data)
+
+        # Ordenar por created_at em Python (mais recentes primeiro)
+        interests.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
 
         print(f"[OK] [RentalService] Encontrados {len(interests)} interesses")
         return interests
@@ -106,7 +108,6 @@ class RentalService:
         interests = []
         docs = db.collection(self.interests_collection)\
             .where("advertiser_id", "==", advertiser_id)\
-            .order_by("created_at", direction=firestore.Query.DESCENDING)\
             .stream()
 
         for doc in docs:
@@ -123,6 +124,9 @@ class RentalService:
                 interest_data["student"] = student_doc.to_dict()
 
             interests.append(interest_data)
+
+        # Ordenar por created_at em Python (mais recentes primeiro)
+        interests.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
 
         print(f"[OK] [RentalService] Encontrados {len(interests)} interesses")
         return interests

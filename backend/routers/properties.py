@@ -14,13 +14,12 @@ from config.firebase_config import get_storage_bucket
 router = APIRouter()
 property_service = PropertyService()
 
-
+    #Criar nova propriedade (apenas anunciantes)
 @router.post("/", response_model=Property, status_code=status.HTTP_201_CREATED)
 async def create_property(
     property_data: PropertyCreate,
     current_user: AdvertiserProfile = Depends(get_current_advertiser_firebase)
 ):
-    """Criar nova propriedade (apenas anunciantes)"""
     try:
         new_property = property_service.create_property(property_data, current_user.id)
         return Property(**new_property)
@@ -31,14 +30,13 @@ async def create_property(
         )
 
 
-#Nova rota para upload de imagens com fallback local
+#Faz upload de imagens para uma propriedade (apenas pelo proprietário)
 @router.post("/{property_id}/upload-images", status_code=status.HTTP_200_OK)
 async def upload_property_images(
     property_id: str,
     files: List[UploadFile] = File(...),
     current_user: AdvertiserProfile = Depends(get_current_advertiser_firebase)
 ):
-    """Faz upload de imagens para uma propriedade (apenas pelo proprietário)"""
 
     # Valida se a propriedade existe e pertence ao usuario
     property_data = property_service.get_property_by_id(property_id)
@@ -81,7 +79,7 @@ async def upload_property_images(
                     buffer.write(content)
 
                 # URL local para servir a imagem
-                image_url = f"http://localhost:8002/uploads/properties/{property_id}/{safe_filename}"
+                image_url = f"http://localhost:8000/uploads/properties/{property_id}/{safe_filename}"
                 image_urls.append(image_url)
                 print(f"[OK] Arquivo salvo localmente: {file_path}")
 
@@ -122,7 +120,7 @@ async def upload_property_images(
                         buffer.write(content)
 
                     # URL local para servir a imagem
-                    image_url = f"http://localhost:8002/uploads/properties/{property_id}/{safe_filename}"
+                    image_url = f"http://localhost:8000/uploads/properties/{property_id}/{safe_filename}"
                     image_urls.append(image_url)
                     print(f"[OK] Fallback: Arquivo salvo localmente: {file_path}")
 
@@ -318,6 +316,95 @@ async def delete_property(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar propriedade: {str(e)}"
         )
+
+
+# Deletar imagens específicas de uma propriedade
+@router.delete("/{property_id}/delete-images")
+async def delete_property_images(
+    property_id: str,
+    image_data: dict,
+    current_user: AdvertiserProfile = Depends(get_current_advertiser_firebase)
+):
+    try:
+        # Validar se a propriedade existe e pertence ao usuário
+        property_data = property_service.get_property_by_id(property_id)
+        if not property_data or property_data.get("owner_id") != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Propriedade não encontrada ou você não tem permissão"
+            )
+
+        image_urls = image_data.get("image_urls", [])
+        if not image_urls:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhuma URL de imagem fornecida"
+            )
+
+        success = property_service.delete_images_from_property(
+            property_id, image_urls, current_user.id
+        )
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao deletar imagens"
+            )
+
+        return {"message": f"{len(image_urls)} imagem(ns) deletada(s) com sucesso"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao deletar imagens: {str(e)}"
+        )
+
+
+# Reordenar imagens de uma propriedade
+@router.put("/{property_id}/reorder-images")
+async def reorder_property_images(
+    property_id: str,
+    image_data: dict,
+    current_user: AdvertiserProfile = Depends(get_current_advertiser_firebase)
+):
+    try:
+        # Validar se a propriedade existe e pertence ao usuário
+        property_data = property_service.get_property_by_id(property_id)
+        if not property_data or property_data.get("owner_id") != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Propriedade não encontrada ou você não tem permissão"
+            )
+
+        image_urls = image_data.get("image_urls", [])
+        if not image_urls:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhuma URL de imagem fornecida"
+            )
+
+        success = property_service.reorder_property_images(
+            property_id, image_urls, current_user.id
+        )
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao reordenar imagens"
+            )
+
+        return {"message": "Imagens reordenadas com sucesso"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao reordenar imagens: {str(e)}"
+        )
+
 
     #Adicionar propriedade aos favoritos
 @router.post("/{property_id}/favorite")

@@ -1,47 +1,38 @@
-# Modificações no Repositório `projeto-unireservas`
+# Modificações Recentes no Backend
 
-Este documento descreve as alterações realizadas no repositório `projeto-unireservas` em relação ao estado original.
+## Estrutura de Pastas
+- Adicionado arquivo `run.py` para execução simplificada do backend.
+- Adicionado `Makefile` para comandos automatizados.
+- Adicionado arquivo `INSTRUCOES.md` com instruções de uso.
 
-## Modificações Gerais
-- **Refatoração de Serviços**: Os serviços de autenticação, listagem, perfil e propriedades foram refatorados para utilizar o Firebase Authentication e simplificar a lógica de autenticação.
-- **Atualização de Dependências**: Algumas dependências foram ajustadas, como o uso de `@vitejs/plugin-react` no lugar de `@vitejs/plugin-react-swc`.
-- **Correções de Tipos**: Ajustes nos tipos TypeScript para maior compatibilidade com o backend.
+## Serviços e APIs
+- **Endpoints migrados para porta 8000** (`http://localhost:8000/api/...`).
+- Novos endpoints para:
+	- Deleção de propriedades (`DELETE /api/properties/{id}`)
+	- Deleção e reordenação de imagens de propriedades
+	- Upload de imagens com validação e preview
+	- Gerenciamento de reservas e interesses em imóveis
+- Refatoração dos serviços para maior compatibilidade com frontend e integração com Firebase Authentication.
 
-## Alterações Específicas
+## Modelos e Tipos
+- Ajustes nos tipos de propriedade (`Property`) para suportar ordenação, filtragem e compatibilidade com componentes do frontend.
+- Novos tipos para filtragem e ordenação de propriedades (`FilterState`, `SortOption`).
 
-### Arquivo `src/services/authService.ts`
-- Substituição do `TokenManager` por uma classe `AuthService` que utiliza o Firebase Authentication.
-- Adição de métodos para login, logout e restauração de sessão a partir do `localStorage`.
-- Remoção de funções relacionadas a tokens de atualização e renovação.
+## Funcionalidades Novas
+- Implementação de drag-and-drop para reordenação de imagens de imóveis.
+- Adição de zona de perigo para deleção de anúncios.
+- Novas abas de reservas e interesses no perfil do usuário (estudante e anunciante).
+- Modais para reserva e demonstração de interesse em imóveis.
 
-### Arquivo `src/services/listingService.ts`
-- Substituição do `TokenManager` por `authFirebaseService` para gerenciar tokens de autenticação.
-- Ajustes nos métodos de upload de imagens e listagem de propriedades.
+## Integração
+- Integração total dos serviços com Firebase Authentication.
+- Ajuste dos endpoints para garantir CORS e evitar problemas de cache.
 
-### Arquivo `src/services/profileService.ts`
-- Refatoração completa para utilizar o Firebase Authentication.
-- Adição de métodos para buscar, atualizar e deletar o perfil do usuário logado.
-- Remoção de métodos antigos que utilizavam `TokenManager`.
+## Observações
+- Todos os endpoints e serviços agora utilizam a porta 8000.
+- A estrutura do projeto está mais modular e preparada para escalabilidade.
+- Novos scripts e utilitários facilitam testes e manutenção do backend.
 
-### Arquivo `src/services/propertyService.ts`
-- Refatoração para utilizar `authFirebaseService`.
-- Adição de novos métodos para buscar propriedades, criar, atualizar e deletar propriedades.
-- Ajustes nos headers de autenticação para suportar `FormData`.
+---
 
-### Arquivo `src/types/profile.ts`
-- Ajustes nos tipos `StudentProfile` e `AdvertiserProfile` para maior compatibilidade com o backend.
-- Adição de propriedades opcionais para suportar diferentes formatos de dados (`snake_case` e `camelCase`).
-
-### Arquivo `src/types/property.ts`
-- Criação do tipo `PropertyCreate` para representar dados de criação de propriedades.
-- Ajustes no tipo `Property` para incluir propriedades opcionais e compatibilidade com o backend.
-
-### Arquivo `tailwind.config.ts`
-- Substituição de `require` por `import` para carregar o plugin `tailwindcss-animate`.
-
-### Arquivo `vite.config.ts`
-- Substituição de `@vitejs/plugin-react-swc` por `@vitejs/plugin-react`.
-- Ajustes no formato de alias para o diretório `src`.
-
-## Conclusão
-As alterações realizadas visam melhorar a integração com o Firebase Authentication, simplificar a lógica de autenticação e garantir maior compatibilidade entre o frontend e o backend. Além disso, foram feitos ajustes para melhorar a consistência do código e a experiência do desenvolvedor.
+Essas modificações tornam o backend mais robusto, seguro e alinhado com as necessidades.

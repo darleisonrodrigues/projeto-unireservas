@@ -2,7 +2,7 @@ import { Search, Menu, User, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthFirebase } from "@/contexts/AuthFirebaseContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ interface HeaderProps {
 
 const Header = ({ showSearch = true }: HeaderProps) => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuthFirebase();
 
   const handleLogout = async () => {
     try {

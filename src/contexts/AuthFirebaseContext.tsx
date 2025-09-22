@@ -10,6 +10,8 @@ interface AuthFirebaseContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
 }
 
 // Criar contexto
@@ -29,13 +31,39 @@ export const AuthFirebaseProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       setIsLoading(true);
 
-      // Verificar se ha token armazenado
-      if (!authFirebaseService.isAuthenticated()) {
+      // Verificar se há token no localStorage primeiro
+      const token = authFirebaseService.getToken();
+      if (!token) {
         setUser(null);
         return;
       }
 
-      // Primeiro, tentar buscar perfil completo
+      // Tentar buscar perfil do localStorage primeiro (mais rápido)
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        try {
+          const parsedProfile = JSON.parse(cachedProfile);
+          setUser(parsedProfile);
+
+          // Verificar se o token ainda é válido em background
+          authFirebaseService.verifyToken().then(result => {
+            if (!result.valid) {
+              // Token inválido, fazer logout
+              setUser(null);
+              localStorage.removeItem('user_profile');
+              localStorage.removeItem('firebase_token');
+            }
+          }).catch(() => {
+            // Em caso de erro, manter o usuário logado mas verificar na próxima ação
+          });
+
+          return;
+        } catch (e) {
+          console.warn('Erro ao parsear perfil em cache:', e);
+        }
+      }
+
+      // Se não há cache, buscar perfil completo
       const userProfile = await authFirebaseService.fetchUserProfile();
       if (userProfile) {
         setUser(userProfile);
@@ -64,6 +92,8 @@ export const AuthFirebaseProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const response = await authFirebaseService.login({ email, password });
       setUser(response.user);
+      // Salvar perfil no localStorage para persistir sessão
+      localStorage.setItem('user_profile', JSON.stringify(response.user));
     } catch (error) {
       console.error('Erro no login Firebase:', error);
       throw error;
@@ -74,6 +104,8 @@ export const AuthFirebaseProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const response = await authFirebaseService.register(data);
       setUser(response.user);
+      // Salvar perfil no localStorage para persistir sessão
+      localStorage.setItem('user_profile', JSON.stringify(response.user));
     } catch (error) {
       console.error('Erro no registro Firebase:', error);
       throw error;
@@ -84,10 +116,39 @@ export const AuthFirebaseProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       await authFirebaseService.logout();
       setUser(null);
+      // Limpar localStorage
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('firebase_token');
     } catch (error) {
       console.error('Erro no logout Firebase:', error);
       // Mesmo com erro, limpar estado local
       setUser(null);
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('firebase_token');
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const response = await authFirebaseService.loginWithGoogle();
+      setUser(response.user);
+      // Salvar perfil no localStorage para persistir sessão
+      localStorage.setItem('user_profile', JSON.stringify(response.user));
+    } catch (error) {
+      console.error('Erro no login com Google:', error);
+      throw error;
+    }
+  };
+
+  const loginWithApple = async () => {
+    try {
+      const response = await authFirebaseService.loginWithApple();
+      setUser(response.user);
+      // Salvar perfil no localStorage para persistir sessão
+      localStorage.setItem('user_profile', JSON.stringify(response.user));
+    } catch (error) {
+      console.error('Erro no login com Apple:', error);
+      throw error;
     }
   };
 
@@ -99,6 +160,8 @@ export const AuthFirebaseProvider: React.FC<{ children: ReactNode }> = ({ childr
     register,
     logout,
     checkAuth,
+    loginWithGoogle,
+    loginWithApple,
   };
 
   return (

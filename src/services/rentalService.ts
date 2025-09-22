@@ -1,6 +1,6 @@
 import { authFirebaseService } from './authFirebaseService';
 
-const API_BASE_URL = 'http://localhost:8002/api/rentals';
+const API_BASE_URL = 'http://localhost:8000/api/rentals';
 
 export interface RentalInterest {
   property_id: string;

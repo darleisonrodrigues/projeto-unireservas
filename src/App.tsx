@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "@/routes/AppRoutes";
 import { PropertyProvider } from "@/contexts/PropertyContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthFirebaseProvider } from "@/contexts/AuthFirebaseContext";
 
 
 const queryClient = new QueryClient();
@@ -13,7 +13,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
+      <AuthFirebaseProvider>
         <PropertyProvider>
           <Toaster />
           <Sonner />
@@ -21,7 +21,7 @@ const App = () => (
             <AppRoutes />
           </BrowserRouter>
         </PropertyProvider>
-      </AuthProvider>
+      </AuthFirebaseProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

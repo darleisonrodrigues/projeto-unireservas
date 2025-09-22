@@ -1,27 +1,34 @@
-import { Heart, MapPin, Users, Wifi, Car } from "lucide-react";
+import { Heart, MapPin, Users, Wifi, Car, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/types/property";
 import { useProperties } from "@/hooks/useProperties";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
+import { useAuthFirebase } from "@/contexts/AuthFirebaseContext";
+import { useState } from "react";
+import ReservationModal from "@/components/ReservationModal";
 
-const PropertyCard = ({ 
+const PropertyCard = ({
   id,
-  title, 
-  type, 
-  price, 
-  location, 
-  university, 
-  distance, 
-  image, 
-  rating, 
+  title,
+  type,
+  price,
+  location,
+  university,
+  distance,
+  image,
+  rating,
   amenities,
   capacity,
   isFavorited
 }: Property) => {
   const { toggleFavorite } = useProperties();
   const navigate = useNavigate();
+
+  const { user } = useAuthFirebase();
+
+  const [showReservationModal, setShowReservationModal] = useState(false);
   
   const typeLabels = {
     kitnet: "Kitnet",
@@ -107,15 +114,56 @@ const PropertyCard = ({
               <span className="text-sm font-normal text-muted-foreground">/mês</span>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => navigate(ROUTES.PROPERTIES.DETAILS(id))}
-          >
-            Ver detalhes
-          </Button>
+          <div className="flex gap-2">
+            {user?.userType === 'student' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowReservationModal(true)}
+                className="flex items-center gap-1"
+              >
+                <Calendar className="h-4 w-4" />
+                Reservar
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => navigate(ROUTES.PROPERTIES.DETAILS(id))}
+            >
+              Ver detalhes
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Modal de reserva */}
+      {showReservationModal && (
+        <ReservationModal
+          property={{
+            id,
+            title,
+            type,
+            price,
+            location,
+            university,
+            distance,
+            images: image ? [image] : [],
+            image,
+            rating,
+            amenities,
+            capacity,
+            isFavorited,
+            is_favorited: isFavorited
+          }}
+          isOpen={showReservationModal}
+          onClose={() => setShowReservationModal(false)}
+          onSuccess={() => {
+            // Aqui você pode adicionar alguma ação após sucesso, como refresh da lista
+            console.log('Reserva criada com sucesso!');
+          }}
+        />
+      )}
     </div>
   );
 };

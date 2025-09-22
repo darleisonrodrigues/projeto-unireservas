@@ -11,9 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Settings, User, Home, Heart, MessageSquare, Bell, Loader2, Trash2, Plus, Edit } from "lucide-react";
+import { Settings, User, Home, Heart, MessageSquare, Bell, Loader2, Trash2, Plus, Edit, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ROUTES } from "@/config/routes";
+import ReservationsTab from "@/components/ReservationsTab";
+import AdvertiserReservationsTab from "@/components/AdvertiserReservationsTab";
+import ChatTab from "@/components/ChatTab";
 
 const Profile = () => {
   const [searchParams] = useSearchParams();
@@ -184,36 +187,49 @@ const Profile = () => {
 
         {/* Profile Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
             <TabsTrigger value="dados-pessoais" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Dados</span>
             </TabsTrigger>
-            
+
             {!isAdvertiser && (
-              <TabsTrigger value="preferencias" className="flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                <span className="hidden sm:inline">Preferências</span>
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="preferencias" className="flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  <span className="hidden sm:inline">Preferências</span>
+                </TabsTrigger>
+                <TabsTrigger value="reservas" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden sm:inline">Reservas</span>
+                </TabsTrigger>
+              </>
             )}
-            
+
             <TabsTrigger value="imoveis" className="flex items-center gap-2">
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">
                 {isAdvertiser ? "Meus Imóveis" : "Favoritos"}
               </span>
             </TabsTrigger>
-            
+
+            {isAdvertiser && (
+              <TabsTrigger value="reservas-recebidas" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span className="hidden sm:inline">Reservas</span>
+              </TabsTrigger>
+            )}
+
             <TabsTrigger value="mensagens" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               <span className="hidden sm:inline">Mensagens</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="notificacoes" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Notificações</span>
             </TabsTrigger>
-            
+
             <TabsTrigger value="configuracoes" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Configurações</span>
@@ -364,6 +380,20 @@ const Profile = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Aba de Reservas */}
+          {!isAdvertiser && (
+            <TabsContent value="reservas" className="mt-6">
+              <ReservationsTab />
+            </TabsContent>
+          )}
+
+          {/* Aba de Reservas Recebidas (Anunciantes) */}
+          {isAdvertiser && (
+            <TabsContent value="reservas-recebidas" className="mt-6">
+              <AdvertiserReservationsTab />
+            </TabsContent>
+          )}
           
           <TabsContent value="imoveis" className="mt-6">
             <Card>
@@ -482,19 +512,7 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="mensagens" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Mensagens</CardTitle>
-                <CardDescription>
-                  Converse com {profile.userType === 'advertiser' ? "potenciais inquilinos" : "proprietários"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Funcionalidade em desenvolvimento
-                </div>
-              </CardContent>
-            </Card>
+            <ChatTab />
           </TabsContent>
           
           <TabsContent value="notificacoes" className="mt-6">

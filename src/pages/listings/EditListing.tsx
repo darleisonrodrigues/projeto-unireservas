@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Camera, MapPin, Plus, X, Loader2 } from "lucide-react";
+import { Camera, MapPin, Plus, X, Loader2, Trash2, GripVertical, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,12 +25,15 @@ const EditListing = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState<Partial<ListingFormData>>({
     amenities: [],
     photos: []
   });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // Carregar dados da propriedade para edição
   useEffect(() => {
@@ -123,15 +126,46 @@ const EditListing = () => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    console.log('Arquivos selecionados:', files.length);
+
+    // Validar tipos de arquivo
+    const validFiles = files.filter(file => file.type.startsWith('image/'));
+    if (validFiles.length !== files.length) {
+      toast({
+        title: "Alguns arquivos foram ignorados",
+        description: "Apenas arquivos de imagem são aceitos.",
+        variant: "destructive"
+      });
+    }
+
+    if (validFiles.length === 0) return;
+
     // Gerar URLs de preview
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
 
     // Atualizar fotos no formData
     setFormData(prev => ({
       ...prev,
-      photos: [...(prev.photos || []), ...files]
+      photos: [...(prev.photos || []), ...validFiles]
     }));
+
+    // Limpar o input para permitir selecionar os mesmos arquivos novamente
+    e.target.value = '';
+
+    toast({
+      title: "Fotos adicionadas",
+      description: `${validFiles.length} foto(s) adicionada(s) com sucesso.`,
+      variant: "default"
+    });
+  };
+
+  // Função para abrir seletor de arquivos
+  const openFileSelector = () => {
+    const fileInput = document.getElementById('photos') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -145,7 +179,94 @@ const EditListing = () => {
   };
 
   const removeExistingImage = (index: number) => {
+    const imageToDelete = existingImages[index];
+    setImagesToDelete(prev => [...prev, imageToDelete]);
     setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Reordenar imagens por drag and drop
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const newImages = [...existingImages];
+    const draggedImage = newImages[draggedIndex];
+    newImages.splice(draggedIndex, 1);
+    newImages.splice(dropIndex, 0, draggedImage);
+
+    setExistingImages(newImages);
+    setDraggedIndex(null);
+  };
+
+  // Função para deletar propriedade
+  const handleDeleteProperty = async () => {
+    if (!id) {
+      console.error('ID da propriedade não encontrado');
+      toast({
+        title: "Erro",
+        description: "ID da propriedade não encontrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Iniciando deleção da propriedade:', id);
+
+    const confirmed = window.confirm(
+      "⚠️ ATENÇÃO: Esta ação é irreversível!\n\n" +
+      "Tem certeza que deseja deletar este anúncio?\n" +
+      "Todos os dados, fotos e reservas relacionadas serão perdidos."
+    );
+
+    if (!confirmed) {
+      console.log('Deleção cancelada pelo usuário');
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      console.log('Chamando propertyService.deleteProperty com ID:', id);
+
+      await propertyService.deleteProperty(id);
+
+      console.log('Propriedade deletada com sucesso');
+      toast({
+        title: "Anúncio deletado!",
+        description: "O anúncio foi removido com sucesso.",
+        variant: "default"
+      });
+
+      // Aguardar um pouco antes de navegar para garantir que o toast seja visível
+      setTimeout(() => {
+        navigate("/profile?tab=imoveis");
+      }, 1000);
+
+    } catch (error) {
+      console.error('Erro detalhado ao deletar propriedade:', error);
+
+      let errorMessage = "Não foi possível deletar o anúncio. Tente novamente.";
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('Mensagem de erro:', error.message);
+      }
+
+      toast({
+        title: "Erro ao deletar",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,7 +296,7 @@ const EditListing = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Atualizar dados da propriedade
+      // 1. Atualizar dados da propriedade com imagens reorganizadas
       await propertyService.updateProperty(id, {
         title: formData.title!,
         type: formData.type!,
@@ -185,10 +306,16 @@ const EditListing = () => {
         distance: formData.distance || "",
         amenities: formData.amenities || [],
         capacity: Number(formData.capacity),
-        description: formData.description || ""
+        description: formData.description || "",
+        images: existingImages // Incluir ordem das imagens
       });
 
-      // 2. Se há novas fotos, fazer upload
+      // 2. Deletar imagens marcadas para remoção
+      if (imagesToDelete.length > 0) {
+        await propertyService.deleteImages(id, imagesToDelete);
+      }
+
+      // 3. Se há novas fotos, fazer upload
       if (formData.photos && formData.photos.length > 0) {
         await propertyService.uploadImages(id, formData.photos);
       }
@@ -199,7 +326,7 @@ const EditListing = () => {
         variant: "default"
       });
 
-      navigate("/profile");
+      navigate("/profile?tab=imoveis");
 
     } catch (error) {
       console.error('Erro ao atualizar propriedade:', error);
@@ -390,24 +517,51 @@ const EditListing = () => {
           {existingImages.length > 0 && (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Imagens Atuais</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Arraste as imagens para reordená-las. A primeira imagem será a capa do anúncio.
+              </p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                 {existingImages.map((image, index) => (
-                  <div key={index} className="relative group">
+                  <div
+                    key={index}
+                    className="relative group cursor-move"
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                  >
                     <img
                       src={image}
                       alt={`Imagem ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-32 object-cover rounded-lg border-2 border-transparent group-hover:border-primary transition-colors"
                     />
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                        Capa
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 left-2 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeExistingImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="Remover imagem"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
               </div>
+              {imagesToDelete.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    <AlertTriangle className="w-4 h-4 inline mr-1" />
+                    {imagesToDelete.length} imagem(ns) será(ão) removida(s) ao salvar.
+                  </p>
+                </div>
+              )}
             </Card>
           )}
 
@@ -419,13 +573,45 @@ const EditListing = () => {
             </h2>
 
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+              <div
+                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                onClick={openFileSelector}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('border-primary');
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-primary');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-primary');
+                  const files = Array.from(e.dataTransfer.files);
+                  if (files.length > 0) {
+                    // Simular evento de input para reutilizar a lógica
+                    const inputEvent = {
+                      target: { files, value: '' }
+                    } as any;
+                    handlePhotoSelect(inputEvent);
+                  }
+                }}
+              >
                 <Camera className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground mb-4">
                   Adicione novas fotos da sua propriedade
                 </p>
-                <Label htmlFor="photos" className="cursor-pointer">
-                  <Button type="button" variant="outline" className="inline-flex">
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="inline-flex hover:bg-muted transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Evitar double click
+                      openFileSelector();
+                    }}
+                    disabled={isSubmitting}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Selecionar Fotos
                   </Button>
@@ -436,8 +622,15 @@ const EditListing = () => {
                     accept="image/*"
                     onChange={handlePhotoSelect}
                     className="hidden"
+                    disabled={isSubmitting}
                   />
-                </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Clique para selecionar ou arraste arquivos aqui
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Aceita JPG, PNG, GIF. Máximo 10MB por arquivo.
+                  </p>
+                </div>
               </div>
 
               {/* Preview das novas fotos */}
@@ -464,19 +657,55 @@ const EditListing = () => {
             </div>
           </Card>
 
+          {/* Zona de Perigo */}
+          <Card className="p-6 border-destructive bg-red-50">
+            <h2 className="text-xl font-semibold mb-4 text-destructive flex items-center">
+              <Trash2 className="w-5 h-5 mr-2" />
+              Zona de Perigo
+            </h2>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Esta ação é irreversível. Todos os dados, fotos e reservas relacionadas a este anúncio serão perdidos permanentemente.
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Botão deletar clicado! ID da propriedade:', id);
+                  handleDeleteProperty();
+                }}
+                disabled={isSubmitting || isDeleting}
+                className="min-w-[140px]"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deletando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Deletar Anúncio
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+
           {/* Botões de Ação */}
-          <div className="flex gap-4 justify-end">
+          <div className="flex gap-4 justify-between">
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/profile")}
-              disabled={isSubmitting}
+              onClick={() => navigate("/profile?tab=imoveis")}
+              disabled={isSubmitting || isDeleting}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDeleting}
               className="min-w-[140px]"
             >
               {isSubmitting ? (

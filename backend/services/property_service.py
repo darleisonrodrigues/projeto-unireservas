@@ -17,7 +17,7 @@ class PropertyService:
             self.db = get_db()
         return self.db
     
-        #Criar nova propriedade"""
+        #Criar nova propriedade
     def create_property(self, property_data: PropertyCreate, owner_id: str) -> Dict[str, Any]:
         print(f"[PropertyService] Criando propriedade para owner: {owner_id}")
 
@@ -64,7 +64,7 @@ class PropertyService:
         doc = doc_ref.get()
 
         if not doc.exists:
-            print(f"❌ [PropertyService] Propriedade {property_id} não encontrada ao adicionar imagens")
+            print(f"[PropertyService] Propriedade {property_id} não encontrada ao adicionar imagens")
             return None
         
         property_data = doc.to_dict()
@@ -78,7 +78,9 @@ class PropertyService:
 
         updated_doc = doc_ref.get()
         print(f"[OK] [PropertyService] Imagens adicionadas com sucesso à propriedade {property_id}")
-        return updated_doc.to_dict()
+        result = updated_doc.to_dict()
+        result["id"] = updated_doc.id
+        return result
     
         #Buscar propriedade por ID
     def get_property_by_id(self, property_id: str) -> Optional[Dict[str, Any]]:
@@ -89,7 +91,9 @@ class PropertyService:
         doc = db.collection(self.collection).document(property_id).get()
         if doc.exists:
             print("[OK] [PropertyService] Propriedade encontrada")
-            return doc.to_dict()
+            prop_data = doc.to_dict()
+            prop_data["id"] = doc.id  # Adicionar o ID do documento
+            return prop_data
         print("[PropertyService] Propriedade não encontrada")
         return None
     
@@ -118,7 +122,11 @@ class PropertyService:
             all_docs = []
 
         offset = (page - 1) * per_page
-        properties = [doc.to_dict() for doc in all_docs[offset:offset + per_page]]
+        properties = []
+        for doc in all_docs[offset:offset + per_page]:
+            prop_data = doc.to_dict()
+            prop_data["id"] = doc.id  # Adicionar o ID do documento
+            properties.append(prop_data)
 
         # Se temos um usuário logado, verificar favoritos
         if current_user_id:
@@ -155,27 +163,44 @@ class PropertyService:
         doc_ref.update(update_data)
         updated_doc = doc_ref.get()
         result = updated_doc.to_dict()
+        result["id"] = updated_doc.id
         print("[OK] [PropertyService] Propriedade atualizada")
         return result
     
         #Deletar propriedade (apenas pelo owner)
     def delete_property(self, property_id: str, owner_id: str) -> bool:
         print(f"[PropertyService] Deletando propriedade {property_id} pelo owner {owner_id}")
+
         db = self._get_db()
         if not db:
+            print(f"[ERROR] [PropertyService] Banco de dados não disponível")
             raise Exception("Banco de dados não disponível")
+
         doc_ref = db.collection(self.collection).document(property_id)
         doc = doc_ref.get()
+
         if not doc.exists:
-            print("[PropertyService] Propriedade não encontrada")
+            print(f"[ERROR] [PropertyService] Propriedade {property_id} não encontrada")
             return False
+
         current_data = doc.to_dict()
-        if current_data.get("owner_id") != owner_id:
-            print("[PropertyService] Usuário não é o proprietário")
+        current_owner = current_data.get("owner_id")
+
+        print(f"[PropertyService] Owner atual da propriedade: {current_owner}")
+        print(f"[PropertyService] Owner requisitando deleção: {owner_id}")
+
+        if current_owner != owner_id:
+            print(f"[ERROR] [PropertyService] Usuário {owner_id} não é o proprietário da propriedade {property_id}")
             raise Exception("Você não tem permissão para deletar esta propriedade")
-        doc_ref.delete()
-        print("[OK] [PropertyService] Propriedade deletada")
-        return True
+
+        # Deletar o documento
+        try:
+            doc_ref.delete()
+            print(f"[OK] [PropertyService] Propriedade {property_id} deletada com sucesso")
+            return True
+        except Exception as e:
+            print(f"[ERROR] [PropertyService] Erro ao deletar documento: {str(e)}")
+            raise Exception(f"Erro ao deletar propriedade: {str(e)}")
 
        #Buscar propriedades por termo e filtros
     def search_properties(self, search_term: str = None, filters=None, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
@@ -205,7 +230,11 @@ class PropertyService:
 
         try:
             docs = query.stream()
-            properties = [doc.to_dict() for doc in docs]
+            properties = []
+            for doc in docs:
+                prop_data = doc.to_dict()
+                prop_data["id"] = doc.id
+                properties.append(prop_data)
         except Exception:
             properties = []
 
@@ -283,6 +312,71 @@ class PropertyService:
         except Exception as e:
             print(f"[ERROR] Erro ao buscar favoritos do usuário {user_id}: {e}")
             return []
+
+    # Deletar imagens específicas de uma propriedade
+    def delete_images_from_property(self, property_id: str, image_urls: List[str], user_id: str) -> bool:
+        """Deleta imagens específicas de uma propriedade"""
+        print(f"[PropertyService] Deletando {len(image_urls)} imagens da propriedade {property_id}")
+
+        db = self._get_db()
+        if not db:
+            raise Exception("Banco de dados não disponível")
+
+        doc_ref = db.collection(self.collection).document(property_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            print(f"[PropertyService] Propriedade {property_id} não encontrada")
+            return False
+
+        property_data = doc.to_dict()
+        if property_data.get('owner_id') != user_id:
+            raise Exception("Você não tem permissão para editar esta propriedade")
+
+        # Remover as URLs específicas da lista de imagens
+        current_images = property_data.get('images', [])
+        updated_images = [img for img in current_images if img not in image_urls]
+
+        doc_ref.update({
+            'images': updated_images,
+            'updated_at': datetime.utcnow()
+        })
+
+        print(f"[OK] [PropertyService] {len(image_urls)} imagens deletadas da propriedade {property_id}")
+        return True
+
+    # Reordenar imagens de uma propriedade
+    def reorder_property_images(self, property_id: str, image_urls: List[str], user_id: str) -> bool:
+        """Reordena as imagens de uma propriedade"""
+        print(f"[PropertyService] Reordenando imagens da propriedade {property_id}")
+
+        db = self._get_db()
+        if not db:
+            raise Exception("Banco de dados não disponível")
+
+        doc_ref = db.collection(self.collection).document(property_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            print(f"[PropertyService] Propriedade {property_id} não encontrada")
+            return False
+
+        property_data = doc.to_dict()
+        if property_data.get('owner_id') != user_id:
+            raise Exception("Você não tem permissão para editar esta propriedade")
+
+        # Verificar se todas as URLs fornecidas existem na propriedade
+        current_images = property_data.get('images', [])
+        if set(image_urls) != set(current_images):
+            raise Exception("As URLs fornecidas não correspondem às imagens atuais da propriedade")
+
+        doc_ref.update({
+            'images': image_urls,
+            'updated_at': datetime.utcnow()
+        })
+
+        print(f"[OK] [PropertyService] Imagens reordenadas na propriedade {property_id}")
+        return True
 
 
 # Instancia global do serviço

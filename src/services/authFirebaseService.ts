@@ -11,7 +11,7 @@ import {
 import { auth } from "@/config/firebase";
 
 // Base URL da API
-const API_BASE_URL = "http://localhost:8002/api/auth-firebase"; // as vezes e http://localhost:8000/api/auth-firebase
+const API_BASE_URL = "http://localhost:8000/api/auth-firebase"; // as vezes e http://localhost:8000/api/auth-firebase
 
 // Interfaces
 export interface RegisterData {

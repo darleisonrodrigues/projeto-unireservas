@@ -2,15 +2,6 @@ import React, { createContext, useContext, useState, useMemo, ReactNode, useEffe
 import { Property, FilterState, SortOption } from '@/types/property';
 import { propertyService } from '@/services/propertyService';
 import { authFirebaseService } from '@/services/authFirebaseService';
-import { useAuth } from '@/hooks/useAuth';
-
-// Importar dados mockados - fallback caso o backend não esteja disponível
-import kitnetImage from "@/assets/kitnet-1.jpg";
-import roomImage from "@/assets/room-1.jpg";
-import apartmentImage from "@/assets/apartment-1.jpg";
-import apartamento01Image from "@/assets/apartamento01.jpg";
-import apartamento02Image from "@/assets/apartamento02.jpg";
-import apartamento03Image from "@/assets/apartamento03.jpg";
 
 interface PropertyContextType {
   properties: Property[];
@@ -25,164 +16,6 @@ interface PropertyContextType {
 }
 
 const PropertyContext = createContext<PropertyContextType | undefined>(undefined);
-
-//dados mockados - centralizados para facilitar manutenção
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    title: "Kitnet moderna próxima à UFMG",
-    type: "kitnet",
-    price: 650,
-    location: "Pampulha, Belo Horizonte",
-    university: "UFMG",
-    distance: "500m",
-    image: kitnetImage,
-    rating: 4.8,
-    amenities: ["wifi", "garagem"],
-    capacity: 1,
-    isFavorited: false
-  },
-  {
-    id: "2", 
-    title: "Quarto individual com banheiro privativo",
-    type: "quarto",
-    price: 480,
-    location: "Savassi, Belo Horizonte", 
-    university: "PUC Minas",
-    distance: "800m",
-    image: roomImage,
-    rating: 4.6,
-    amenities: ["wifi"],
-    capacity: 1,
-    isFavorited: true
-  },
-  {
-    id: "3",
-    title: "Apartamento 2 quartos para compartilhar",
-    type: "apartamento",
-    price: 900,
-    location: "Funcionários, Belo Horizonte",
-    university: "UFMG",
-    distance: "1.2km", 
-    image: apartmentImage,
-    rating: 4.9,
-    amenities: ["wifi", "garagem"],
-    capacity: 2,
-    isFavorited: false
-  },
-  {
-    id: "4",
-    title: "Kitnet compacta e funcional",
-    type: "kitnet",
-    price: 580,
-    location: "Centro, Belo Horizonte",
-    university: "PUC Minas", 
-    distance: "600m",
-    image: kitnetImage,
-    rating: 4.4,
-    amenities: ["wifi"],
-    capacity: 1,
-    isFavorited: false
-  },
-  {
-    id: "5",
-    title: "Quarto em casa compartilhada",
-    type: "quarto",
-    price: 420,
-    location: "Ouro Preto, Belo Horizonte",
-    university: "UFMG",
-    distance: "400m",
-    image: roomImage, 
-    rating: 4.7,
-    amenities: ["wifi", "garagem"],
-    capacity: 1,
-    isFavorited: false
-  },
-  {
-    id: "6",
-    title: "Apartamento completo com 3 quartos",
-    type: "apartamento",
-    price: 1200,
-    location: "Coração de Jesus, Belo Horizonte",
-    university: "UFMG",
-    distance: "900m",
-    image: apartmentImage,
-    rating: 4.8,
-    amenities: ["wifi", "garagem"],
-    capacity: 3,
-    isFavorited: true
-  },
-  {
-    id: "7",
-    title: "Apartamento com vista para a cidade",
-    type: "apartamento",
-    price: 1100,
-    location: "Centro, Belo Horizonte",
-    university: "UFMG",
-    distance: "700m",
-    image: apartamento01Image,
-    rating: 4.7,
-    amenities: ["wifi", "garagem"],
-    capacity: 2,
-    isFavorited: false
-  },
-  {
-    id: "8",
-    title: "Apartamento espaçoso com varanda",
-    type: "apartamento",
-    price: 1300,
-    location: "Savassi, Belo Horizonte",
-    university: "PUC Minas",
-    distance: "1km",
-    image: apartamento02Image,
-    rating: 4.9,
-    amenities: ["wifi", "garagem"],
-    capacity: 3,
-    isFavorited: true
-  },
-  {
-    id: "9",
-    title: "Apartamento moderno e bem localizado",
-    type: "apartamento",
-    price: 1250,
-    location: "Funcionários, Belo Horizonte",
-    university: "UFMG",
-    distance: "500m",
-    image: apartamento03Image,
-    rating: 4.8,
-    amenities: ["wifi", "garagem"],
-    capacity: 2,
-    isFavorited: false
-  },
-  {
-    id: "10",
-    title: "Kitnet mobiliada no centro",
-    type: "kitnet",
-    price: 750,
-    location: "Centro, Belo Horizonte",
-    university: "UFMG",
-    distance: "1.5km",
-    image: kitnetImage,
-    rating: 4.5,
-    amenities: ["wifi", "mobiliado"],
-    capacity: 1,
-    isFavorited: false
-  },
-  {
-    id: "11",
-    title: "Quarto próximo à universidade - aceita pets",
-    type: "quarto",
-    price: 550,
-    location: "Pampulha, Belo Horizonte",
-    university: "UFMG",
-    distance: "300m",
-    image: roomImage,
-    rating: 4.6,
-    amenities: ["wifi", "pets"],
-    capacity: 1,
-    isFavorited: false
-  }
-];
 
 const initialFilters: FilterState = {
   propertyType: "todos",
@@ -199,34 +32,36 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
 
-  // Carregar propriedades na inicialização e quando usuário mudar
+  // Carregar propriedades na inicialização
   useEffect(() => {
     loadProperties();
-  }, [user]); // Recarregar quando user mudar (login/logout)
+  }, []);
 
   const loadProperties = async () => {
     try {
       setIsLoading(true);
       setError(null);
+
       const data = await propertyService.getAllProperties();
 
       // Transformar dados do backend para formato do frontend
-      const transformedProperties = data.map(property => ({
+      const transformedProperties = data.map((property, index) => ({
         ...property,
+        // Garantir que há um ID válido - usar índice como fallback para propriedades de teste
+        id: property.id || `mock-${index}`,
         // Compatibilidade: o PropertyCard espera 'image' (singular) e 'isFavorited'
         image: property.images && property.images.length > 0 ? property.images[0] : undefined,
-        isFavorited: property.is_favorited
+        isFavorited: property.is_favorited || false
       }));
 
-      console.log('Propriedades carregadas do backend:', transformedProperties.length);
+      console.log('Propriedades carregadas do Firebase:', transformedProperties.length);
       setProperties(transformedProperties);
     } catch (err) {
-      console.error('Erro ao carregar propriedades:', err);
-      setError('Erro ao carregar propriedades. Usando dados de demonstração.');
-      //fallback para dados mockados
-      setProperties(mockProperties);
+      console.error('Erro ao carregar propriedades do Firebase:', err);
+      setError('Erro ao carregar propriedades. Verifique sua conexão com a internet.');
+      // Não usar fallback, deixar array vazio para mostrar que não há dados
+      setProperties([]);
     } finally {
       setIsLoading(false);
     }
@@ -245,19 +80,19 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const toggleFavorite = async (propertyId: string) => {
+    // Primeiro atualizar localmente para resposta imediata
+    setProperties(prev =>
+      prev.map(property =>
+        property.id === propertyId
+          ? { ...property, isFavorited: !property.isFavorited, is_favorited: !property.is_favorited }
+          : property
+      )
+    );
+
     try {
       // Verificar estado atual do favorito (antes da mudança local)
       const currentProperty = properties.find(p => p.id === propertyId);
-      const willBeFavorited = !(currentProperty?.isFavorited || false);
-
-      // Primeiro atualizar localmente para resposta imediata
-      setProperties(prev =>
-        prev.map(property =>
-          property.id === propertyId
-            ? { ...property, isFavorited: willBeFavorited, is_favorited: willBeFavorited }
-            : property
-        )
-      );
+      const willBeFavorited = currentProperty?.isFavorited || false;
 
       // Chamar a API correspondente
       const token = authFirebaseService.getToken();
@@ -267,7 +102,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       const response = await fetch(
-        `http://localhost:8002/api/properties/${propertyId}/favorite`,
+        `http://localhost:8000/api/properties/${propertyId}/favorite`,
         {
           method: willBeFavorited ? 'POST' : 'DELETE',
           headers: {
@@ -282,7 +117,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
         setProperties(prev =>
           prev.map(property =>
             property.id === propertyId
-              ? { ...property, isFavorited: !willBeFavorited, is_favorited: !willBeFavorited }
+              ? { ...property, isFavorited: !property.isFavorited, is_favorited: !property.is_favorited }
               : property
           )
         );
@@ -295,7 +130,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       setProperties(prev =>
         prev.map(property =>
           property.id === propertyId
-            ? { ...property, isFavorited: !willBeFavorited, is_favorited: !willBeFavorited }
+            ? { ...property, isFavorited: !property.isFavorited, is_favorited: !property.is_favorited }
             : property
         )
       );

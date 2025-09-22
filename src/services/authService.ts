@@ -1,7 +1,7 @@
 import { auth } from '@/config/firebase';
 import { User, onAuthStateChanged } from 'firebase/auth';
 
-const API_BASE_URL = 'http://localhost:8002/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 // Interfaces
 export interface LoginCredentials {

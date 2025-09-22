@@ -1,7 +1,7 @@
 import { Property, PropertyCreate } from '@/types/property';
 import { authFirebaseService } from './authFirebaseService';
 
-const API_BASE_URL = 'http://localhost:8002/api/properties';
+const API_BASE_URL = 'http://localhost:8000/api/properties';
 
 class PropertyService {
   // Metodo para obter os headers para requisições JSON
@@ -35,7 +35,7 @@ class PropertyService {
 
   async create(data: PropertyCreate): Promise<Property> {
     try {
-      const response = await fetch(API_BASE_URL, {
+      const response = await fetch(`${API_BASE_URL}/`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(data),
@@ -103,18 +103,37 @@ class PropertyService {
         console.log('Sem token de autenticação disponível, carregando propriedades sem favoritos');
       }
 
-      const response = await fetch(API_BASE_URL, {
+      const url = `${API_BASE_URL}/?per_page=50`;
+      console.log('🔗 URL completa:', url);
+      console.log('📋 Headers:', headers);
+
+      const response = await fetch(url, {
         method: 'GET',
-        headers: headers
+        headers: headers,
+        mode: 'cors', // Garantir que CORS está ativo
+        cache: 'no-cache' // Evitar cache do browser
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Falha ao buscar imóveis.');
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        throw new Error(`Falha ao buscar imóveis: ${response.status} - ${errorText}`);
       }
+
       const data = await response.json();
+      console.log('✅ Dados recebidos com sucesso:', data.total, 'propriedades');
       return data.properties || data;
     } catch (error: unknown) {
       console.error('Erro ao buscar imóveis:', error);
+
+      // Verificar tipo específico de erro
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Erro de conexão: Verifique se o backend está rodando na porta 8000');
+      }
+
       if (error instanceof Error) throw error;
       throw new Error('Ocorreu um erro desconhecido.');
     }
@@ -157,7 +176,7 @@ class PropertyService {
   // Buscar propriedades do usuário logado (apenas anunciantes)
   async getMyProperties(): Promise<Property[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/my`, {
+      const response = await fetch(`${API_BASE_URL}/my/`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -176,7 +195,7 @@ class PropertyService {
   }
 
   // Atualizar uma propriedade existente
-  async updateProperty(id: string, data: Partial<PropertyCreate>): Promise<Property> {
+  async updateProperty(id: string, data: Partial<PropertyCreate & { images?: string[] }>): Promise<Property> {
     try {
       const response = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
@@ -193,6 +212,103 @@ class PropertyService {
       console.error('Erro ao atualizar propriedade:', error);
       if (error instanceof Error) throw error;
       throw new Error('Ocorreu um erro desconhecido ao atualizar a propriedade.');
+    }
+  }
+
+  /**
+   * Deleta uma propriedade e todos os dados relacionados
+   * @param id O ID da propriedade a ser deletada
+   */
+  async deleteProperty(id: string): Promise<void> {
+    console.log(`[PropertyService] Iniciando deleção da propriedade: ${id}`);
+
+    try {
+      const url = `${API_BASE_URL}/${id}`;
+      const headers = this.getAuthHeaders();
+
+      console.log(`[PropertyService] URL: ${url}`);
+      console.log(`[PropertyService] Headers:`, headers);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: headers,
+      });
+
+      console.log(`[PropertyService] Response status: ${response.status}`);
+      console.log(`[PropertyService] Response ok: ${response.ok}`);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error(`[PropertyService] Error data:`, errorData);
+        } catch (e) {
+          console.error(`[PropertyService] Erro ao parsear resposta de erro:`, e);
+          errorData = { detail: `Erro HTTP ${response.status}` };
+        }
+
+        throw new Error(errorData.detail || `Falha ao deletar a propriedade (${response.status}).`);
+      }
+
+      console.log(`[PropertyService] Propriedade ${id} deletada com sucesso`);
+
+    } catch (error: unknown) {
+      console.error(`[PropertyService] Erro ao deletar propriedade ${id}:`, error);
+
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Erro de conexão: Verifique se o backend está rodando na porta 8000');
+      }
+
+      if (error instanceof Error) throw error;
+      throw new Error('Ocorreu um erro desconhecido ao deletar a propriedade.');
+    }
+  }
+
+  /**
+   * Deleta imagens específicas de uma propriedade
+   * @param propertyId O ID da propriedade
+   * @param imageUrls Array com as URLs das imagens a serem deletadas
+   */
+  async deleteImages(propertyId: string, imageUrls: string[]): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${propertyId}/delete-images`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ image_urls: imageUrls }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Falha ao deletar as imagens.');
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao deletar imagens:', error);
+      if (error instanceof Error) throw error;
+      throw new Error('Ocorreu um erro desconhecido ao deletar as imagens.');
+    }
+  }
+
+  /**
+   * Reordena as imagens de uma propriedade
+   * @param propertyId O ID da propriedade
+   * @param imageUrls Array com as URLs das imagens na nova ordem
+   */
+  async reorderImages(propertyId: string, imageUrls: string[]): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${propertyId}/reorder-images`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ image_urls: imageUrls }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Falha ao reordenar as imagens.');
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao reordenar imagens:', error);
+      if (error instanceof Error) throw error;
+      throw new Error('Ocorreu um erro desconhecido ao reordenar as imagens.');
     }
   }
 }

@@ -9,7 +9,7 @@ import { Mail, Lock, User, ArrowRight, GraduationCap, Building, Eye, EyeOff } fr
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/config/routes";
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthFirebase } from "@/contexts/AuthFirebaseContext";
 import { RegisterData } from "@/services/authFirebaseService";
 import { Separator } from "@/components/ui/separator";
 
@@ -37,7 +37,7 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { register, loginWithGoogle, loginWithApple } = useAuth();
+  const { register, loginWithGoogle, loginWithApple } = useAuthFirebase();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
