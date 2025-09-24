@@ -19,7 +19,6 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Links Úteis</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to={ROUTES.LISTINGS.CREATE} className="hover:text-primary transition-all duration-300 ease-out">Anunciar imóvel</Link></li>
-              <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Como funciona</Link></li>
               <li><Link to="#" className="hover:text-primary transition-all duration-300 ease-out">Gerenciar anúncios</Link></li>
             </ul>
           </div>
