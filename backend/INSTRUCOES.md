@@ -66,6 +66,5 @@ Se houver problemas:
 3. **Verificar se o Firebase está configurado** corretamente
 4. **Checar se a porta 8000 está disponível**
 
----
 
-### ✅ BORAAAAA GALERA!!
+
