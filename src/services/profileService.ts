@@ -3,7 +3,7 @@
 import { authFirebaseService } from './authFirebaseService'; // Usando Firebase Auth Service
 import type { AuthResponse } from './authFirebaseService';
 
-const API_BASE_URL = 'http://localhost:8000/api/profiles';
+const API_BASE_URL = 'https://backend-unireservas.onrender.com/api/profiles';
 
 // Tipo do perfil do usuário
 type UserProfile = AuthResponse['user'];

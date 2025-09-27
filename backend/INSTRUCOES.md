@@ -2,7 +2,7 @@
 - **FastAPI**: ✅ Configurado e funcionando
 - **Firebase Firestore**: ✅ Conectado e inicializado
 - **Dependências**: ✅ Todas instaladas
-- **Documentação**: ✅ Disponível em http://localhost:8000/docs
+- **Documentação**: ✅ Disponível em https://backend-unireservas.onrender.com/docs
 
 ## 🔧 Comandos para executar
 
@@ -21,9 +21,9 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 3. Acessar a aplicação
-- **API**: http://localhost:8000
-- **Documentação**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+- **API**: https://backend-unireservas.onrender.com
+- **Documentação**: https://backend-unireservas.onrender.com/docs
+- **Health Check**: https://backend-unireservas.onrender.com/health
 
 ## 📡 Endpoints principais testados
 
@@ -52,7 +52,7 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
 ## 📋 Próximos passos
 
-1. **Testar endpoints** na documentação: http://localhost:8000/docs
+1. **Testar endpoints** na documentação: https://backend-unireservas.onrender.com/docs
 2. **Integrar com frontend** React
 3. **Configurar dados de teste** no Firestore
 4. **Implementar autenticação** completa

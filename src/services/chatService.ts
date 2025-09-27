@@ -1,6 +1,6 @@
 import { authFirebaseService } from './authFirebaseService';
 
-const API_BASE_URL = 'http://localhost:8000/api/chat';
+const API_BASE_URL = 'https://backend-unireservas.onrender.com/api/chat';
 
 // Tipos para o sistema de chat
 export interface ChatMessage {

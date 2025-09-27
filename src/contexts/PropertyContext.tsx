@@ -102,7 +102,7 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/properties/${propertyId}/favorite`,
+        `https://backend-unireservas.onrender.com/api/properties/${propertyId}/favorite`,
         {
           method: willBeFavorited ? 'POST' : 'DELETE',
           headers: {

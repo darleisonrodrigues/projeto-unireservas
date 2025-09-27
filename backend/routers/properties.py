@@ -79,7 +79,7 @@ async def upload_property_images(
                     buffer.write(content)
 
                 # URL local para servir a imagem
-                image_url = f"http://localhost:8000/uploads/properties/{property_id}/{safe_filename}"
+                image_url = f"https://backend-unireservas.onrender.com/uploads/properties/{property_id}/{safe_filename}"
                 image_urls.append(image_url)
                 print(f"[OK] Arquivo salvo localmente: {file_path}")
 
@@ -120,7 +120,7 @@ async def upload_property_images(
                         buffer.write(content)
 
                     # URL local para servir a imagem
-                    image_url = f"http://localhost:8000/uploads/properties/{property_id}/{safe_filename}"
+                    image_url = f"https://backend-unireservas.onrender.com/uploads/properties/{property_id}/{safe_filename}"
                     image_urls.append(image_url)
                     print(f"[OK] Fallback: Arquivo salvo localmente: {file_path}")
 

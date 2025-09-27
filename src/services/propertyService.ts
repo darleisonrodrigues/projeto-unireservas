@@ -1,7 +1,7 @@
 import { Property, PropertyCreate } from '@/types/property';
 import { authFirebaseService } from './authFirebaseService';
 
-const API_BASE_URL = 'http://localhost:8000/api/properties';
+const API_BASE_URL = 'https://backend-unireservas.onrender.com/api/properties';
 
 class PropertyService {
   // Metodo para obter os headers para requisições JSON

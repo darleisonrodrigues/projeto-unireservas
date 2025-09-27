@@ -6,8 +6,8 @@ import uvicorn
 
 if __name__ == "__main__":
     print("Iniciando servidor UniReservas...")
-    print("Documentação: http://localhost:8000/docs")
-    print("Health Check: http://localhost:8000/health")
+    print("Documentação: https://backend-unireservas.onrender.com/docs")
+    print("Health Check: https://backend-unireservas.onrender.com/health")
     print("-" * 50)
     
     uvicorn.run(
