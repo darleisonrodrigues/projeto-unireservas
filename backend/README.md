@@ -96,7 +96,7 @@ FIREBASE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/
 SECRET_KEY=sua-chave-jwt-super-segura-aqui
 
 # CORS Configuration
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+ALLOWED_ORIGINS=https://site-unireservas-ykc4.onrender.com/
 ```
 
 ## 🚀 Executar o servidor

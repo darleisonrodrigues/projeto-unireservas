@@ -32,7 +32,7 @@ const Index = () => {
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-red-600 mb-4">{error}</p>
-            <p className="text-muted-foreground">Verifique se o backend está funcionando na porta 8000</p>
+            <p className="text-muted-foreground">Verificar backend se está funcionando</p>
           </div>
         ) : filteredProperties.length === 0 ? (
           <div className="text-center py-12">

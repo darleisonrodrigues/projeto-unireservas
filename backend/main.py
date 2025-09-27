@@ -61,7 +61,7 @@ origins = [
     "http://127.0.0.1:8081",
     "http://127.0.0.1:8082",
     "http://127.0.0.1:8083",
-    "https://site-unireservas.onrender.com/",
+    "https://site-unireservas-ykc4.onrender.com/",
 ]
 
 app.add_middleware(
