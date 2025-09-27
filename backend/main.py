@@ -48,7 +48,7 @@ print("Rota Chat registrada")
 
 # Configuração CORS
 origins = [
-    "http://localhost:3000",
+    "https://site-unireservas-ykc4.onrender.com",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
@@ -61,7 +61,6 @@ origins = [
     "http://127.0.0.1:8081",
     "http://127.0.0.1:8082",
     "http://127.0.0.1:8083",
-    "https://site-unireservas-ykc4.onrender.com/",
 ]
 
 app.add_middleware(
