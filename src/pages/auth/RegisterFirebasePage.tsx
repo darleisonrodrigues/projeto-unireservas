@@ -267,10 +267,10 @@ const RegisterFirebasePage = () => {
                         <SelectValue placeholder="Selecione sua universidade" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ufmg">UFMG</SelectItem>
-                        <SelectItem value="puc-mg">PUC Minas</SelectItem>
-                        <SelectItem value="fumec">FUMEC</SelectItem>
-                        <SelectItem value="una">UNA</SelectItem>
+                        <SelectItem value="ufmg">UNIFOR</SelectItem>
+                        <SelectItem value="puc-mg">UFC</SelectItem>
+                        <SelectItem value="fumec">UNIFAMETRO</SelectItem>
+                        <SelectItem value="una">UNICRISTUS</SelectItem>
                         <SelectItem value="outras">Outras</SelectItem>
                       </SelectContent>
                     </Select>
