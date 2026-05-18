@@ -1,6 +1,6 @@
-// Configuração da API
+
 export const API_CONFIG = {
-  BASE_URL: 'https://backend-unireservas.onrender.com/', 
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://200.98.64.110:8000', 
   ENDPOINTS: {
     // Autenticaçao (JWT tradicional)
     AUTH: {

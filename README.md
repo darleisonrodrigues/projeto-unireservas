@@ -1,10 +1,40 @@
 # 🏠 Sistema de Reservas - UniReservas
 
+<p align="center">
+  <img src="https://img.shields.io/badge/React-20232a?style=for-the-badge&logo=react&logoColor=61dafb" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-007acc?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-B06A4E?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/FastAPI-005527?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Firebase-ffca28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" />
+</p>
+
 ## 📋 Visão Geral
 
 O sistema de reservas implementado com sucesso, permitindo que estudantes façam reservas de imóveis e anunciantes gerenciem essas solicitações de forma completa e intuitiva.
 
-## 🚀 Como Usar o Sistema
+## ✨ Features em Destaque
+
+👨‍🎓 **Para Estudantes**
+- **Exploração Fácil**: Busca inteligente e listagem completa de propriedades para sua moradia ideal.
+- **Reservas Inteligentes**: Escolha de datas via calendário, prevenção automática de conflitos com reservas confirmadas e cálculo de dias x preços em tempo real.
+- **Gestão de Estadias**: Acompanhamento claro e prático do status (Aguardando, Confirmado ou Rejeitado).
+- **Chat Integrado**: Canal de mensagens entre os locatários e locadores.
+
+🏢 **Para Anunciantes**
+- **Gestão de Portfólio**: Cadastro das suas moradias contendo regras, limitadores e uploads de imagens.
+- **Dashboard de Negócios**: Aprove ou recuse reservas pendentes e verifique ocupações do imóvel por período.
+- **Hospedagem de Mídia Refinada**: Suporte robusto a Firebase Storage (com fallback containerizado suportando Docker Volumes).
+
+---
+
+## 🛠 Arquitetura do Projeto
+
+Implementado em um formato **Monorepo** focado em contêineres para *deploy self-hosted*:
+
+- `/src` e `/public`: Aplicação Front-end construída com **React + Vite + Tailwind**.
+- `/backend`: API e Regras de Negócio construídas com **Python + FastAPI**, integrando autenticação avançada da Cloud com Firebase.
+
+---
 
 ### 👨‍🎓 Para Estudantes
 
@@ -143,8 +173,3 @@ src/
 - ✅ **Verificação de permissões** por tipo de usuário
 - ✅ **Sanitização de dados** de entrada
 - ✅ **Validação de conflitos** de data no backend
-
-
-## ✅ Status do Projeto
-
-**Backend 98% finalizado**

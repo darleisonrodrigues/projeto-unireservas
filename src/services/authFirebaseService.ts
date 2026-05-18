@@ -9,9 +9,10 @@ import {
   OAuthProvider
 } from "firebase/auth";
 import { auth } from "@/config/firebase";
+import { API_CONFIG } from "@/config/api";
 
 // Base URL da API
-const API_BASE_URL = "https://backend-unireservas.onrender.com/api/auth-firebase";
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/auth-firebase`;
 
 // Interfaces
 export interface RegisterData {

@@ -78,8 +78,9 @@ async def upload_property_images(
                     content = await file.read()
                     buffer.write(content)
 
-                # URL local para servir a imagem
-                image_url = f"https://backend-unireservas.onrender.com/uploads/properties/{property_id}/{safe_filename}"
+                # URL local para servir a imagem (fallback URL de onde o backend hospeda)
+                domain = os.getenv("VITE_API_URL", "http://200.98.64.110:8000").rstrip("/")
+                image_url = f"{domain}/uploads/properties/{property_id}/{safe_filename}"
                 image_urls.append(image_url)
                 print(f"[OK] Arquivo salvo localmente: {file_path}")
 
@@ -120,7 +121,8 @@ async def upload_property_images(
                         buffer.write(content)
 
                     # URL local para servir a imagem
-                    image_url = f"https://backend-unireservas.onrender.com/uploads/properties/{property_id}/{safe_filename}"
+                    domain = os.getenv("VITE_API_URL", "http://200.98.64.110:8000").rstrip("/")
+                    image_url = f"{domain}/uploads/properties/{property_id}/{safe_filename}"
                     image_urls.append(image_url)
                     print(f"[OK] Fallback: Arquivo salvo localmente: {file_path}")
 

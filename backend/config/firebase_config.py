@@ -19,12 +19,27 @@ def initialize_firebase():
                 cred = credentials.Certificate(cred_path)
                 print(f"Usando credenciais do arquivo: {cred_path}")
             else:
-                # Logica de variáveis de ambiente
+                # Trata a chave privada se estiver vindo do Dokploy com "literal \n" ou sem quebras corretas
+                raw_key = settings.FIREBASE_PRIVATE_KEY
+                
+                # Previne erro formatação caso os \n do Dokploy fiquem como literais ou escapados errados
+                formatted_key = raw_key.replace('\\n', '\n')
+                
+                # Recupera se o env tirou todos os \n exceto do começo e fim (solução bruta para MalformedFraming)
+                if "-----BEGIN PRIVATE KEY-----" in formatted_key and formatted_key.count('\n') <= 3:
+                     # Remove cabeçalho e rodapé temporariamente
+                     core_key = formatted_key.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").strip()
+                     # Divide em linhas de 64 caracteres max e recria formatada
+                     import textwrap
+                     core_wrapped = '\n'.join(textwrap.wrap(core_key, width=64))
+                     formatted_key = f"-----BEGIN PRIVATE KEY-----\n{core_wrapped}\n-----END PRIVATE KEY-----\n"
+
+                # Logica de variÃ¡veis de ambiente
                 firebase_config = {
                     "type": "service_account",
                     "project_id": settings.FIREBASE_PROJECT_ID,
                     "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
-                    "private_key": settings.FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
+                    "private_key": formatted_key,
                     "client_email": settings.FIREBASE_CLIENT_EMAIL,
                     "client_id": settings.FIREBASE_CLIENT_ID,
                     "auth_uri": settings.FIREBASE_AUTH_URI,
@@ -73,3 +88,4 @@ def get_db():
     if db is None:
         db = get_firestore_client()
     return db
+

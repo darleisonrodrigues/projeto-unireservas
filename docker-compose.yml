@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unireservas-backend
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - ENV=production
+    volumes:
+      - property_images:/app/uploads
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: unireservas-frontend
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+volumes:
+  property_images:

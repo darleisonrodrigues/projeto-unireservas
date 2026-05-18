@@ -1,7 +1,8 @@
 import { Reservation, ReservationCreate, ReservationUpdate } from '@/types/reservation';
 import { authFirebaseService } from './authFirebaseService';
+import { API_CONFIG } from '@/config/api';
 
-const API_BASE_URL = 'https://backend-unireservas.onrender.com/api/reservations';
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/reservations`;
 
 interface ApiResponse<T = any> {
   success: boolean;

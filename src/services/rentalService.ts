@@ -1,6 +1,7 @@
 import { authFirebaseService } from './authFirebaseService';
+import { API_CONFIG } from '@/config/api';
 
-const API_BASE_URL = 'https://backend-unireservas.onrender.com/api/rentals';
+const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/rentals`;
 
 export interface RentalInterest {
   property_id: string;

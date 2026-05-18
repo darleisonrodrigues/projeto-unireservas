@@ -1,8 +1,10 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import uvicorn
+import os
 from config.firebase_config import initialize_firebase
 from config.settings import settings
 
@@ -46,9 +48,13 @@ print("Rota Reservations registrada")
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 print("Rota Chat registrada")
 
+# Criar e montar a pasta de uploads estáticos para o local storage
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # Configuração CORS
 origins = [
-    "https://site-unireservas-ykc4.onrender.com",
+    "http://200.98.64.110/",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
