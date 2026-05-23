@@ -30,6 +30,13 @@ const PropertyCard = ({
 
   const [showReservationModal, setShowReservationModal] = useState(false);
   
+  // H13 — Heurística 2: exibe unidade de medida na distância
+  const formatDistance = (d: string) => {
+    if (!/^\d+$/.test(d.trim())) return d;
+    const meters = parseInt(d);
+    return meters >= 1000 ? `${(meters / 1000).toFixed(meters % 1000 === 0 ? 0 : 1)}km` : `${meters}m`;
+  };
+
   const typeLabels = {
     kitnet: "Kitnet",
     quarto: "Quarto",
@@ -43,7 +50,7 @@ const PropertyCard = ({
   };
 
   return (
-    <div className="property-card group">
+    <div className="property-card group flex flex-col">
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img 
@@ -75,7 +82,7 @@ const PropertyCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 flex flex-col flex-1 gap-3">
         {/* Title and rating */}
         <div className="flex items-start justify-between">
           <h3 className="font-semibold text-lg leading-tight text-card-foreground line-clamp-2 flex-1">
@@ -90,11 +97,11 @@ const PropertyCard = ({
         {/* Location */}
         <div className="space-y-1">
           <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span>{location}</span>
+            <MapPin className="h-4 w-4 mr-1 shrink-0" />
+            <span className="line-clamp-1">{location}</span>
           </div>
           <div className="text-sm text-primary font-medium">
-            {distance} da {university}
+            {formatDistance(distance)} da {university}
           </div>
         </div>
 
@@ -109,7 +116,7 @@ const PropertyCard = ({
         </div>
 
         {/* Price and CTA */}
-        <div className="flex items-center justify-between pt-2 border-t border-border">
+        <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
           <div>
             <div className="text-2xl font-bold text-card-foreground">
               R$ {price}

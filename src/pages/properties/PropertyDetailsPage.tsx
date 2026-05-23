@@ -107,6 +107,13 @@ const PropertyDetailsPage = () => {
     }
   };
 
+  // H13 — Heurística 2: exibe unidade de medida na distância
+  const formatDistance = (d: string) => {
+    if (!/^\d+$/.test(d.trim())) return d;
+    const meters = parseInt(d);
+    return meters >= 1000 ? `${(meters / 1000).toFixed(meters % 1000 === 0 ? 0 : 1)}km` : `${meters}m`;
+  };
+
   const typeLabels = {
     kitnet: "Kitnet",
     quarto: "Quarto",
@@ -157,6 +164,18 @@ const PropertyDetailsPage = () => {
     wifi: <Wifi className="w-4 h-4" aria-hidden="true" />,
     garagem: <Car className="w-4 h-4" aria-hidden="true" />,
     garage: <Car className="w-4 h-4" aria-hidden="true" />
+  };
+
+  const amenityLabels: Record<string, string> = {
+    wifi: 'Wifi',
+    garagem: 'Garagem',
+    garage: 'Garagem',
+    furnished: 'Mobiliado',
+    mobiliado: 'Mobiliado',
+    piscina: 'Piscina',
+    academia: 'Academia',
+    pets: 'Permite pets',
+    'perto-universidade': 'Perto da universidade',
   };
 
   return (
@@ -268,7 +287,7 @@ const PropertyDetailsPage = () => {
                       </div>
                       <span className="text-muted-foreground">•</span>
                       <span className="text-primary font-medium">
-                        {property.distance} da {property.university}
+                        {formatDistance(property.distance)} da {property.university}
                       </span>
                     </div>
                   </div>
@@ -316,7 +335,7 @@ const PropertyDetailsPage = () => {
                         {property.amenities.map((amenity, index) => (
                           <div key={index} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
                             {amenityIcons[amenity as keyof typeof amenityIcons] || <CheckCircle className="w-4 h-4 text-green-500" />}
-                            <span className="text-sm capitalize">{amenity}</span>
+                            <span className="text-sm">{amenityLabels[amenity] ?? amenity}</span>
                           </div>
                         ))}
                       </div>
@@ -419,7 +438,7 @@ const PropertyDetailsPage = () => {
                 <div className="space-y-2 text-sm">
                   <p><strong>Endereço:</strong> {property.location}</p>
                   <p><strong>Universidade:</strong> {property.university}</p>
-                  <p><strong>Distância:</strong> {property.distance}</p>
+                  <p><strong>Distância:</strong> {formatDistance(property.distance)}</p>
                 </div>
 
                 {/* Aqui você pode adicionar um mapa no futuro */}

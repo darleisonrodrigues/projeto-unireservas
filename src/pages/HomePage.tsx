@@ -18,7 +18,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* H06 — um único formulário de busca: header sem campo de busca na Home */}
+      <Header showSearch={false} />
       <Hero />
       <FilterBar />
 

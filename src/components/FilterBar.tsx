@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useProperties } from "@/hooks/useProperties";
 
 const FilterBar = () => {
-  const { filters, updateFilter, filteredProperties } = useProperties();
+  const { filters, updateFilter, filteredProperties, resetFilters } = useProperties();
 
   const propertyTypes = [
     { id: "todos", label: "Todos" },
@@ -66,7 +66,8 @@ const FilterBar = () => {
 
           {/* Quick filters */}
           <div className="flex items-center space-x-2">
-            <button 
+            {/* H08 — distância explícita no filtro de proximidade */}
+            <button
               className={`filter-chip ${filters.amenities.includes('perto-universidade') ? 'active' : ''}`}
               onClick={() => {
                 const currentAmenities = filters.amenities;
@@ -76,8 +77,9 @@ const FilterBar = () => {
                   : [...currentAmenities, amenity];
                 updateFilter('amenities', updatedAmenities);
               }}
+              title="Imóveis a menos de 2 km da universidade"
             >
-              Perto da universidade
+              Perto da universidade (&lt;2 km)
             </button>
             <button 
               className={`filter-chip ${filters.amenities.includes('mobiliado') ? 'active' : ''}`}
@@ -107,9 +109,20 @@ const FilterBar = () => {
             </button>
           </div>
 
+          {/* H04 — Botão limpar filtros */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-2 whitespace-nowrap text-muted-foreground hover:text-destructive"
+            onClick={resetFilters}
+            aria-label="Limpar todos os filtros"
+          >
+            Limpar filtros
+          </Button>
+
           {/* More filters button */}
-          <Button variant="outline" size="sm" className="ml-4 whitespace-nowrap">
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" className="ml-2 whitespace-nowrap">
+            <SlidersHorizontal className="h-4 w-4 mr-2" aria-hidden="true" />
             Mais filtros
           </Button>
         </div>
