@@ -152,10 +152,11 @@ const PropertyDetailsPage = () => {
   }
 
   const images = property.images || [];
+  /* Correção 14 — Ícones de comodidades com aria-hidden (A14) */
   const amenityIcons = {
-    wifi: <Wifi className="w-4 h-4" />,
-    garagem: <Car className="w-4 h-4" />,
-    garage: <Car className="w-4 h-4" />
+    wifi: <Wifi className="w-4 h-4" aria-hidden="true" />,
+    garagem: <Car className="w-4 h-4" aria-hidden="true" />,
+    garage: <Car className="w-4 h-4" aria-hidden="true" />
   };
 
   return (
@@ -163,27 +164,28 @@ const PropertyDetailsPage = () => {
       <Header showSearch={false} />
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6">
+        {/* Correção 8 — Breadcrumb com aria-label e aria-current (A08) */}
+        <nav aria-label="Localização atual" className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+            Início
           </Button>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-sm text-muted-foreground">Detalhes do imóvel</span>
-        </div>
+          <span className="text-muted-foreground" aria-hidden="true">/</span>
+          <span className="text-sm text-muted-foreground" aria-current="page">Detalhes do imóvel</span>
+        </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Coluna principal - Imagens e Detalhes */}
           <div className="lg:col-span-2 space-y-6">
             {/* Gallery de Imagens */}
             <Card className="overflow-hidden">
-              {images.length > 0 ? (
+              {/* Correção 11 — Galeria de fotos com aria-label descritivo (A11) */}
+            {images.length > 0 ? (
                 <div className="relative">
                   <div className="aspect-[16/10] bg-gray-100">
                     <img
                       src={images[currentImageIndex]}
-                      alt={property.title}
+                      alt={`${property.title} — foto ${currentImageIndex + 1} de ${images.length}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -191,11 +193,14 @@ const PropertyDetailsPage = () => {
                   {/* Indicadores de imagem */}
                   {images.length > 1 && (
                     <>
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2" role="tablist" aria-label="Navegação de fotos">
                         {images.map((_, index) => (
                           <button
                             key={index}
                             onClick={() => setCurrentImageIndex(index)}
+                            role="tab"
+                            aria-selected={index === currentImageIndex}
+                            aria-label={`Ver foto ${index + 1} de ${images.length}`}
                             className={`w-2 h-2 rounded-full transition-colors ${
                               index === currentImageIndex ? 'bg-white' : 'bg-white/50'
                             }`}
@@ -209,13 +214,15 @@ const PropertyDetailsPage = () => {
                           <button
                             key={index}
                             onClick={() => setCurrentImageIndex(index)}
+                            aria-label={`Miniatura ${index + 1} de ${images.length}${index === currentImageIndex ? ' — foto atual' : ''}`}
                             className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
                               index === currentImageIndex ? 'border-primary' : 'border-transparent'
                             }`}
                           >
                             <img
                               src={image}
-                              alt={`Miniatura ${index + 1}`}
+                              alt=""
+                              aria-hidden="true"
                               className="w-full h-full object-cover"
                             />
                           </button>

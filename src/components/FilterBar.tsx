@@ -20,12 +20,13 @@ const FilterBar = () => {
     { id: "acima-1200", label: "Acima de R$ 1.200" }
   ];
 
+  // Correção 7 — FilterBar com role="navigation" (A07)
   return (
-    <div className="bg-background border-b border-border sticky top-16 z-40 backdrop-blur-sm bg-background/80">
+    <nav aria-label="Filtros de imóveis" className="bg-background border-b border-border sticky top-16 z-40 backdrop-blur-sm bg-background/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        
+
         {/* Filter chips */}
-        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide flex-wrap gap-y-2">
           
           {/* Property type filters */}
           <div className="flex items-center space-x-2 border-r border-border pr-4 mr-2">
@@ -47,7 +48,10 @@ const FilterBar = () => {
 
           {/* Price range filter */}
           <div className="flex items-center space-x-2 border-r border-border pr-4 mr-2">
-            <select 
+            <label htmlFor="filter-price" className="sr-only">Faixa de preço</label>
+            <select
+              id="filter-price"
+              aria-label="Filtrar por faixa de preço"
               className="filter-chip bg-transparent border-none outline-none cursor-pointer"
               value={filters.priceRange}
               onChange={(e) => updateFilter('priceRange', e.target.value)}
@@ -116,9 +120,12 @@ const FilterBar = () => {
             <span className="font-medium text-foreground">{filteredProperties.length} imóveis</span> encontrados
           </div>
           
+          {/* Correção 15 — Seletor ordenação com label semântico (A15) */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Ordenar por:</span>
-            <select 
+            <label htmlFor="sort-select" className="text-sm text-muted-foreground">Ordenar por:</label>
+            <select
+              id="sort-select"
+              aria-label="Ordenar imóveis por"
               className="text-sm bg-transparent border border-border rounded-md px-3 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               value={filters.sortBy}
               onChange={(e) => updateFilter('sortBy', e.target.value)}
@@ -132,7 +139,7 @@ const FilterBar = () => {
           </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

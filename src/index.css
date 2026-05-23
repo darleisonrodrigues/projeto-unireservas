@@ -37,19 +37,19 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    /* Primary - University Blue Theme */
-    --primary: 210 85% 55%;
+    /* Primary - University Blue Theme — escurecido para 4.5:1 contraste com branco (A09) */
+    --primary: 210 85% 38%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 210 85% 65%;
-    --primary-dark: 210 85% 45%;
+    --primary-light: 210 85% 50%;
+    --primary-dark: 210 85% 28%;
 
     /* Secondary - Light Gray */
     --secondary: 210 20% 96%;
     --secondary-foreground: 215 25% 15%;
 
-    /* Muted colors */
+    /* Muted colors — escurecido para 4.5:1 contraste WCAG AA */
     --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 55%;
+    --muted-foreground: 215 15% 40%;
 
     /* Accent colors */
     --accent: 210 20% 96%;
@@ -70,14 +70,14 @@
     --radius: 0.75rem;
 
     /* Custom design tokens for Uni Reservas */
-    --university-blue: 210 85% 55%;
-    --university-blue-light: 210 85% 65%;
-    --university-blue-dark: 210 85% 45%;
+    --university-blue: 210 85% 38%;
+    --university-blue-light: 210 85% 50%;
+    --university-blue-dark: 210 85% 28%;
     --neutral-50: 210 20% 98%;
     --neutral-100: 210 20% 96%;
     --neutral-200: 210 20% 90%;
     --neutral-300: 210 15% 75%;
-    --neutral-400: 210 15% 55%;
+    --neutral-400: 210 15% 40%;
     --neutral-500: 210 15% 40%;
     --neutral-600: 215 25% 25%;
     --neutral-700: 215 25% 15%;
@@ -183,4 +183,10 @@
   .filter-chip.active {
     @apply bg-primary text-primary-foreground shadow-primary;
   }
+}
+
+/* Correção 9 — Placeholder com contraste suficiente (A09) — #6b7280 = 4.6:1 sobre fundo branco */
+::placeholder {
+  color: #6b7280;
+  opacity: 1;
 }

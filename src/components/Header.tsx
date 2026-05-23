@@ -160,8 +160,8 @@ const Header = ({ showSearch = true }: HeaderProps) => {
               </>
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Abrir menu de navegação">
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </Button>
           </div>
         </div>
