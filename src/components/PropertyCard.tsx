@@ -52,16 +52,18 @@ const PropertyCard = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         
-        {/* Favorite button */}
+        {/* Correção 3 — Botões de Favoritar com aria-label (P04) */}
         <button
           onClick={async () => await toggleFavorite(id)}
+          aria-label={isFavorited ? `Remover ${title} dos favoritos` : `Adicionar ${title} aos favoritos`}
+          aria-pressed={isFavorited}
           className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 ease-out ${
-            isFavorited 
-              ? 'bg-red-500 text-white' 
+            isFavorited
+              ? 'bg-red-500 text-white'
               : 'bg-white/80 text-neutral-600 hover:bg-white hover:text-red-500'
           }`}
         >
-          <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+          <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} aria-hidden="true" />
         </button>
         
         {/* Type badge */}

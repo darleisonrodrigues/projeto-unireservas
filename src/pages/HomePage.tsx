@@ -22,8 +22,8 @@ const Index = () => {
       <Hero />
       <FilterBar />
 
-      {/* Properties grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Correção 4 — Skip Links para Navegação por Teclado (P05) */}
+      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>

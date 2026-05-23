@@ -55,12 +55,15 @@ const Hero = () => {
           {/* Search form */}
           <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-strong max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Correção 3 — Labels Acessíveis nos Campos do Hero (P03) */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Localização</label>
+                <label htmlFor="hero-location" className="text-sm font-medium text-foreground">Localização</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input 
-                    type="text" 
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <input
+                    id="hero-location"
+                    type="text"
+                    aria-label="Localização: universidade ou bairro"
                     placeholder="Universidade ou bairro"
                     value={heroFilters.location}
                     onChange={(e) => setHeroFilters(prev => ({ ...prev, location: e.target.value }))}
@@ -70,8 +73,10 @@ const Hero = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Tipo de imóvel</label>
-                <select 
+                <label htmlFor="hero-type" className="text-sm font-medium text-foreground">Tipo de imóvel</label>
+                <select
+                  id="hero-type"
+                  aria-label="Tipo de imóvel"
                   value={heroFilters.propertyType}
                   onChange={(e) => setHeroFilters(prev => ({ ...prev, propertyType: e.target.value }))}
                   className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
@@ -84,8 +89,10 @@ const Hero = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Preço máximo</label>
-                <select 
+                <label htmlFor="hero-price" className="text-sm font-medium text-foreground">Preço máximo</label>
+                <select
+                  id="hero-price"
+                  aria-label="Preço máximo"
                   value={heroFilters.maxPrice}
                   onChange={(e) => setHeroFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
                   className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 ease-out"
