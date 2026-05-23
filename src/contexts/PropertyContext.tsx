@@ -60,7 +60,6 @@ export const PropertyProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (err) {
       console.error('Erro ao carregar propriedades do Firebase:', err);
       setError('Erro ao carregar propriedades. Verifique sua conexão com a internet.');
-      // Não usar fallback, deixar array vazio para mostrar que não há dados
       setProperties([]);
     } finally {
       setIsLoading(false);

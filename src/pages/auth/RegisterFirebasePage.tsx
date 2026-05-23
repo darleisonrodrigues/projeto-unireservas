@@ -184,16 +184,19 @@ const RegisterFirebasePage = () => {
 
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Correção 12 — Botões Estudante/Proprietário com role="radio" (A12) */}
                 <div className="space-y-2">
-                  <Label>Você é:</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <Label id="user-type-label">Você é:</Label>
+                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="user-type-label">
                     <Button
                       variant={userType === 'student' ? 'default' : 'outline'}
                       onClick={() => setUserType('student')}
                       className="h-12"
                       type="button"
+                      role="radio"
+                      aria-checked={userType === 'student'}
                     >
-                      <GraduationCap className="mr-2 h-4 w-4" />
+                      <GraduationCap className="mr-2 h-4 w-4" aria-hidden="true" />
                       Estudante
                     </Button>
                     <Button
@@ -201,8 +204,10 @@ const RegisterFirebasePage = () => {
                       onClick={() => setUserType('advertiser')}
                       className="h-12"
                       type="button"
+                      role="radio"
+                      aria-checked={userType === 'advertiser'}
                     >
-                      <Building className="mr-2 h-4 w-4" />
+                      <Building className="mr-2 h-4 w-4" aria-hidden="true" />
                       Proprietário
                     </Button>
                   </div>
@@ -291,24 +296,27 @@ const RegisterFirebasePage = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {/* Correção 5 — Botão toggle senha com aria-label descritivo (A05) */}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" aria-hidden="true" />
                       )}
                     </button>
                   </div>
                 </div>
 
+                {/* Correção 13 — Campo "Confirmar Senha" com mensagem contextual (A13) */}
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
@@ -317,17 +325,23 @@ const RegisterFirebasePage = () => {
                       className="pl-10 pr-10"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
+                      aria-describedby="confirm-password-hint"
                       required
                     />
+                    <span id="confirm-password-hint" className="sr-only">
+                      Digite a mesma senha informada no campo anterior
+                    </span>
+                    {/* Correção 5 — Botão toggle confirmar senha com aria-label descritivo (A05) */}
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" aria-hidden="true" />
                       )}
                     </button>
                   </div>

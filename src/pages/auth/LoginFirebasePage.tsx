@@ -163,16 +163,18 @@ const LoginFirebasePage = () => {
                       required
                       autoComplete="current-password"
                     />
+                    {/* Correção 5 — Botão toggle senha com aria-label descritivo (A05) */}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground disabled:opacity-50"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" aria-hidden="true" />
                       )}
                     </button>
                   </div>
