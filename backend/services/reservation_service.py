@@ -1,9 +1,9 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime, date
 import uuid
-from google.cloud import firestore
 from config.firebase_config import get_db
 from models.rental import ReservationCreate, ReservationUpdate, ReservationResponse
+from utils.reservation_utils import ReservationStatus, parse_iso_date
 
 
 class ReservationService:
@@ -59,7 +59,7 @@ class ReservationService:
             "guests": reservation_data.guests,
             "message": reservation_data.message,
             "total_price": reservation_data.total_price,
-            "status": "pending",
+            "status": ReservationStatus.PENDING,
             "created_at": now,
             "updated_at": now,
         }
@@ -74,13 +74,13 @@ class ReservationService:
     def _get_property_reservations(self, property_id: str, start_date: date, end_date: date) -> List[Dict]:
         db = self._get_db()
 
-        query = db.collection(self.collection).where("property_id", "==", property_id).where("status", "in", ["pending", "confirmed"])
+        query = db.collection(self.collection).where("property_id", "==", property_id).where("status", "in", ReservationStatus.active_statuses())
 
         reservations = []
         for doc in query.stream():
             reservation = doc.to_dict()
-            reservation_start = datetime.fromisoformat(reservation["start_date"]).date()
-            reservation_end = datetime.fromisoformat(reservation["end_date"]).date()
+            reservation_start = parse_iso_date(reservation["start_date"])
+            reservation_end = parse_iso_date(reservation["end_date"])
 
             # Verificar se há conflito de datas
             if (start_date <= reservation_end and end_date >= reservation_start):
@@ -169,13 +169,8 @@ class ReservationService:
 
         # Verificar conflitos de data se estiver alterando datas
         if "start_date" in update_dict or "end_date" in update_dict:
-            new_start = update_dict.get("start_date", datetime.fromisoformat(current_data["start_date"]).date())
-            new_end = update_dict.get("end_date", datetime.fromisoformat(current_data["end_date"]).date())
-
-            if isinstance(new_start, str):
-                new_start = datetime.fromisoformat(new_start).date()
-            if isinstance(new_end, str):
-                new_end = datetime.fromisoformat(new_end).date()
+            new_start = parse_iso_date(update_dict.get("start_date", current_data["start_date"]))
+            new_end = parse_iso_date(update_dict.get("end_date", current_data["end_date"]))
 
             # Converter datas para string para o Firestore
             if "start_date" in update_dict:
@@ -217,7 +212,7 @@ class ReservationService:
             raise Exception("Você não tem permissão para cancelar esta reserva")
 
         # Verificar se a reserva pode ser cancelada
-        if current_data["status"] in ["cancelled", "rejected"]:
+        if current_data["status"] in ReservationStatus.terminal_statuses():
             raise Exception("Reserva já foi cancelada ou rejeitada")
 
         doc_ref.update({
@@ -249,8 +244,8 @@ class ReservationService:
             property_id=reservation["property_id"],
             student_id=reservation["student_id"],
             advertiser_id=reservation["advertiser_id"],
-            start_date=datetime.fromisoformat(reservation["start_date"]).date(),
-            end_date=datetime.fromisoformat(reservation["end_date"]).date(),
+            start_date=parse_iso_date(reservation["start_date"]),
+            end_date=parse_iso_date(reservation["end_date"]),
             guests=reservation["guests"],
             message=reservation.get("message"),
             total_price=reservation["total_price"],

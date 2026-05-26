@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, MapPin, Users, MessageSquare, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
-import { Reservation, ReservationStatusLabels, ReservationStatusColors } from "@/types/reservation";
+import { Loader2, Calendar, MapPin, Users, MessageSquare, AlertCircle } from "lucide-react";
+import { Reservation } from "@/types/reservation";
 import { reservationService } from "@/services/reservationService";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatReservationDate, getStatusColor, getStatusIcon, getStatusLabel } from "@/lib/reservationUtils";
 
 const ReservationsTab = () => {
   const { toast } = useToast();
@@ -68,32 +69,6 @@ const ReservationsTab = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'confirmed':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled':
-        return <XCircle className="w-4 h-4" />;
-      case 'rejected':
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    return ReservationStatusColors[status as keyof typeof ReservationStatusColors] || 'bg-gray-100 text-gray-800';
-  };
 
   if (isLoading) {
     return (
@@ -175,7 +150,7 @@ const ReservationsTab = () => {
                     <Badge className={getStatusColor(reservation.status)}>
                       <div className="flex items-center gap-1">
                         {getStatusIcon(reservation.status)}
-                        {ReservationStatusLabels[reservation.status as keyof typeof ReservationStatusLabels]}
+                        {getStatusLabel(reservation.status)}
                       </div>
                     </Badge>
                   </div>
@@ -186,7 +161,7 @@ const ReservationsTab = () => {
                       <div className="text-sm">
                         <div className="font-medium">Check-in</div>
                         <div className="text-muted-foreground">
-                          {formatDate(reservation.start_date)}
+                          {formatReservationDate(reservation.start_date)}
                         </div>
                       </div>
                     </div>
@@ -196,7 +171,7 @@ const ReservationsTab = () => {
                       <div className="text-sm">
                         <div className="font-medium">Check-out</div>
                         <div className="text-muted-foreground">
-                          {formatDate(reservation.end_date)}
+                          {formatReservationDate(reservation.end_date)}
                         </div>
                       </div>
                     </div>
