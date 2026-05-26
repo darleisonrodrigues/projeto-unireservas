@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.rental import ChatCreate, MessageCreate, ChatResponse, MessageResponse, ChatListResponse, ChatMessagesResponse
 
@@ -40,9 +41,9 @@ class ChatService:
 
         # Verificar se já existe um chat entre este estudante e anunciante para esta propriedade
         existing_chat_query = db.collection(self.chats_collection)\
-            .where("student_id", "==", student_id)\
-            .where("advertiser_id", "==", advertiser_id)\
-            .where("property_id", "==", property_id)\
+            .where(filter=FieldFilter("student_id", "==", student_id))\
+            .where(filter=FieldFilter("advertiser_id", "==", advertiser_id))\
+            .where(filter=FieldFilter("property_id", "==", property_id))\
             .stream()
 
         existing_chat = None
@@ -150,7 +151,7 @@ class ChatService:
 
         # Buscar chats do usuário ordenados por atualização
         chats_query = db.collection(self.chats_collection)\
-            .where(field, "==", user_id)\
+            .where(filter=FieldFilter(field, "==", user_id))\
             .order_by("updated_at", direction=firestore.Query.DESCENDING)\
             .stream()
 
@@ -220,7 +221,7 @@ class ChatService:
         # Buscar mensagens do chat com paginação super otimizada
         # Usar apenas campos necessários para reduzir dados transferidos
         messages_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_id)\
+            .where(filter=FieldFilter("chat_id", "==", chat_id))\
             .order_by("created_at", direction=firestore.Query.DESCENDING)\
             .limit(limit)\
             .offset(offset)\
@@ -326,7 +327,7 @@ class ChatService:
 
         # Buscar última mensagem ordenada e limitada
         last_message_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_data["id"])\
+            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
             .order_by("created_at", direction=firestore.Query.DESCENDING)\
             .limit(1)\
             .stream()
@@ -338,9 +339,9 @@ class ChatService:
 
         # Contar mensagens não lidas em consulta separada otimizada
         unread_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_data["id"])\
-            .where("is_read", "==", False)\
-            .where("sender_id", "!=", current_user_id)\
+            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
+            .where(filter=FieldFilter("is_read", "==", False))\
+            .where(filter=FieldFilter("sender_id", "!=", current_user_id))\
             .stream()
 
         unread_count = sum(1 for _ in unread_query)
@@ -371,8 +372,8 @@ class ChatService:
 
         # Buscar mensagens não lidas do chat que não foram enviadas pelo usuário atual
         messages_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_id)\
-            .where("is_read", "==", False)\
+            .where(filter=FieldFilter("chat_id", "==", chat_id))\
+            .where(filter=FieldFilter("is_read", "==", False))\
             .stream()
 
         batch = db.batch()
@@ -459,7 +460,7 @@ class ChatService:
 
         # Buscar última mensagem ordenada e limitada
         last_message_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_data["id"])\
+            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
             .order_by("created_at", direction=firestore.Query.DESCENDING)\
             .limit(1)\
             .stream()
@@ -471,9 +472,9 @@ class ChatService:
 
         # Contar mensagens não lidas em consulta separada otimizada
         unread_query = db.collection(self.messages_collection)\
-            .where("chat_id", "==", chat_data["id"])\
-            .where("is_read", "==", False)\
-            .where("sender_id", "!=", current_user_id)\
+            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
+            .where(filter=FieldFilter("is_read", "==", False))\
+            .where(filter=FieldFilter("sender_id", "!=", current_user_id))\
             .stream()
 
         unread_count = sum(1 for _ in unread_query)

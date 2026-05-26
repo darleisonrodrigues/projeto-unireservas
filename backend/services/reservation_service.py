@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime, date
 import uuid
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.rental import ReservationCreate, ReservationUpdate, ReservationResponse
 from utils.reservation_utils import ReservationStatus, parse_iso_date
@@ -117,8 +118,8 @@ class ReservationService:
 
         query = (
             db.collection(self.collection)
-            .where("property_id", "==", property_id)
-            .where("status", "in", ReservationStatus.active_statuses())
+            .where(filter=FieldFilter("property_id", "==", property_id))
+            .where(filter=FieldFilter("status", "in", ReservationStatus.active_statuses()))
         )
 
         reservations = []
@@ -164,7 +165,9 @@ class ReservationService:
         # Query 1 — buscar todas as reservas do usuário
         raw_reservations = [
             doc.to_dict()
-            for doc in db.collection(self.collection).where(field, "==", user_id).stream()
+            for doc in db.collection(self.collection)
+            .where(filter=FieldFilter(field, "==", user_id))
+            .stream()
         ]
 
         if not raw_reservations:

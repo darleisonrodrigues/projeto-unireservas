@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.property import Property, PropertyCreate, PropertyUpdate
 
@@ -105,14 +106,14 @@ class PropertyService:
             raise Exception("Banco de dados não disponível")
         query = db.collection(self.collection)
         if owner_id:
-            query = query.where("owner_id", "==", owner_id)
+            query = query.where(filter=FieldFilter("owner_id", "==", owner_id))
         if filters:
             if filters.property_type:
-                query = query.where("type", "==", filters.property_type)
+                query = query.where(filter=FieldFilter("type", "==", filters.property_type))
             if filters.max_price:
-                query = query.where("price", "<=", filters.max_price)
+                query = query.where(filter=FieldFilter("price", "<=", filters.max_price))
             if filters.location:
-                query = query.where("location", ">=", filters.location).where("location", "<=", filters.location + "\uf8ff")
+                query = query.where(filter=FieldFilter("location", ">=", filters.location)).where(filter=FieldFilter("location", "<=", filters.location + "\uf8ff"))
         
         try:
             all_docs = list(query.stream())
@@ -214,15 +215,15 @@ class PropertyService:
 
         # Busca por termo (implementação básica)
         if search_term:
-            query = query.where("title", ">=", search_term)
-            query = query.where("title", "<=", search_term + "\uf8ff")
+            query = query.where(filter=FieldFilter("title", ">=", search_term))
+            query = query.where(filter=FieldFilter("title", "<=", search_term + "\uf8ff"))
 
         # Aplicar outros filtros
         if filters:
             if filters.property_type:
-                query = query.where("type", "==", filters.property_type)
+                query = query.where(filter=FieldFilter("type", "==", filters.property_type))
             if filters.max_price:
-                query = query.where("price", "<=", filters.max_price)
+                query = query.where(filter=FieldFilter("price", "<=", filters.max_price))
 
         # Paginação
         offset = (page - 1) * per_page
