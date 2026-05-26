@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.rental import RentalInterest, RentalRequest
 
@@ -28,9 +29,9 @@ class RentalService:
 
         # Verificar se o estudante já demonstrou interesse nesta propriedade
         existing_interest = db.collection(self.interests_collection)\
-            .where("property_id", "==", property_id)\
-            .where("student_id", "==", student_id)\
-            .where("status", "==", "pending")\
+            .where(filter=FieldFilter("property_id", "==", property_id))\
+            .where(filter=FieldFilter("student_id", "==", student_id))\
+            .where(filter=FieldFilter("status", "==", "pending"))\
             .stream()
 
         if any(existing_interest):
@@ -78,7 +79,7 @@ class RentalService:
 
         interests = []
         docs = db.collection(self.interests_collection)\
-            .where("student_id", "==", student_id)\
+            .where(filter=FieldFilter("student_id", "==", student_id))\
             .stream()
 
         for doc in docs:
@@ -107,7 +108,7 @@ class RentalService:
 
         interests = []
         docs = db.collection(self.interests_collection)\
-            .where("advertiser_id", "==", advertiser_id)\
+            .where(filter=FieldFilter("advertiser_id", "==", advertiser_id))\
             .stream()
 
         for doc in docs:

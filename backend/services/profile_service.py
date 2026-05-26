@@ -1,6 +1,7 @@
 
 import logging
 from typing import Union, Optional
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.profile import (StudentProfile,AdvertiserProfile,)
 
@@ -27,7 +28,7 @@ class ProfileService:
         if not self.collection:
             return None
         try:
-            query = self.collection.where("email", "==", email).limit(1)
+            query = self.collection.where(filter=FieldFilter("email", "==", email)).limit(1)
             docs = query.stream()
             for doc in docs:
                 user_data = doc.to_dict()
@@ -45,7 +46,7 @@ class ProfileService:
         if not self.collection:
             return None
         try:
-            query = self.collection.where("firebase_uid", "==", firebase_uid).limit(1)
+            query = self.collection.where(filter=FieldFilter("firebase_uid", "==", firebase_uid)).limit(1)
             docs = query.stream()
             for doc in docs:
                 user_data = doc.to_dict()
