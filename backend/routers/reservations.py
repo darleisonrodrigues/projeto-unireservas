@@ -1,11 +1,19 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import List
-from models.rental import ReservationCreate, ReservationUpdate, ReservationResponse, ApiResponse
+from models.rental import ReservationCreate, ReservationUpdate, ApiResponse
 from services.reservation_service import reservation_service
 from utils.firebase_auth import get_current_user_firebase
-from models.profile import StudentProfile, AdvertiserProfile
+from utils.reservation_utils import ReservationStatus
 
 router = APIRouter()
+
+
+def _require_advertiser(current_user=Depends(get_current_user_firebase)):
+    if current_user.user_type != "advertiser":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas anunciantes podem executar esta ação"
+        )
+    return current_user
 
     #Criar nova reserva (apenas estudantes)
 @router.post("/", response_model=ApiResponse)
@@ -159,84 +167,51 @@ async def cancel_reservation(
             detail=str(e)
         )
     
-    #Confirmar reserva (apenas anunciantes)
+    #Confirmar ou rejeitar reserva (apenas anunciantes)
+_STATUS_MESSAGES = {
+    ReservationStatus.CONFIRMED: "Reserva confirmada com sucesso",
+    ReservationStatus.REJECTED: "Reserva rejeitada",
+}
+
 @router.patch("/{reservation_id}/confirm", response_model=ApiResponse)
 async def confirm_reservation(
     reservation_id: str,
-    current_user = Depends(get_current_user_firebase)
+    current_user=Depends(_require_advertiser)
 ):
-    try:
-        print(f"[RESERVATIONS] Confirmando reserva: {reservation_id}")
+    return await _update_reservation_status(reservation_id, ReservationStatus.CONFIRMED, current_user)
 
-        if current_user.user_type != "advertiser":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Apenas anunciantes podem confirmar reservas"
-            )
 
-        update_data = ReservationUpdate(status="confirmed")
-        updated_reservation = reservation_service.update_reservation(
-            reservation_id, update_data, current_user.id
-        )
-
-        if not updated_reservation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reserva não encontrada"
-            )
-
-        return ApiResponse(
-            success=True,
-            message="Reserva confirmada com sucesso",
-            data={"reservation": updated_reservation.model_dump()}
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[RESERVATIONS] Erro ao confirmar reserva: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    
-    #Rejeitar reserva (apenas anunciantes)
 @router.patch("/{reservation_id}/reject", response_model=ApiResponse)
 async def reject_reservation(
     reservation_id: str,
-    current_user = Depends(get_current_user_firebase)
+    current_user=Depends(_require_advertiser)
 ):
+    return await _update_reservation_status(reservation_id, ReservationStatus.REJECTED, current_user)
+
+
+async def _update_reservation_status(
+    reservation_id: str,
+    new_status: ReservationStatus,
+    current_user
+) -> ApiResponse:
     try:
-        print(f"[RESERVATIONS] Rejeitando reserva: {reservation_id}")
+        print(f"[RESERVATIONS] Atualizando status para '{new_status}': {reservation_id}")
 
-        if current_user.user_type != "advertiser":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Apenas anunciantes podem rejeitar reservas"
-            )
-
-        update_data = ReservationUpdate(status="rejected")
-        updated_reservation = reservation_service.update_reservation(
-            reservation_id, update_data, current_user.id
+        updated = reservation_service.update_reservation(
+            reservation_id, ReservationUpdate(status=new_status), current_user.id
         )
 
-        if not updated_reservation:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Reserva não encontrada"
-            )
+        if not updated:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reserva não encontrada")
 
         return ApiResponse(
             success=True,
-            message="Reserva rejeitada",
-            data={"reservation": updated_reservation.model_dump()}
+            message=_STATUS_MESSAGES[new_status],
+            data={"reservation": updated.model_dump()}
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[RESERVATIONS] Erro ao rejeitar reserva: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        print(f"[RESERVATIONS] Erro ao atualizar status: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

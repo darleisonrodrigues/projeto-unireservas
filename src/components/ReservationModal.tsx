@@ -4,16 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Users } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { Loader2, Users } from "lucide-react";
 import { Property } from "@/types/property";
 import { ReservationFormData } from "@/types/reservation";
 import { reservationService } from "@/services/reservationService";
 import { useToast } from "@/hooks/use-toast";
+import DatePickerField from "@/components/DatePickerField";
 
 interface ReservationModalProps {
   property: Property;
@@ -22,17 +18,17 @@ interface ReservationModalProps {
   onSuccess?: () => void;
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 const ReservationModal = ({ property, isOpen, onClose, onSuccess }: ReservationModalProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ReservationFormData>({
     startDate: new Date(),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias a partir de hoje
+    endDate: new Date(Date.now() + SEVEN_DAYS_MS),
     guests: 1,
     message: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [showStartCalendar, setShowStartCalendar] = useState(false);
-  const [showEndCalendar, setShowEndCalendar] = useState(false);
 
   const calculateTotalPrice = () => {
     return reservationService.calculateTotalPrice(property.price, formData.startDate, formData.endDate);
@@ -102,7 +98,7 @@ const ReservationModal = ({ property, isOpen, onClose, onSuccess }: ReservationM
   const resetForm = () => {
     setFormData({
       startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + SEVEN_DAYS_MS),
       guests: 1,
       message: ''
     });
@@ -126,79 +122,18 @@ const ReservationModal = ({ property, isOpen, onClose, onSuccess }: ReservationM
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Datas */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Data de entrada</Label>
-              <Popover open={showStartCalendar} onOpenChange={setShowStartCalendar}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.startDate ? (
-                      format(formData.startDate, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span>Selecione...</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.startDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setFormData(prev => ({ ...prev, startDate: date }));
-                        setShowStartCalendar(false);
-                      }
-                    }}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Data de saída</Label>
-              <Popover open={showEndCalendar} onOpenChange={setShowEndCalendar}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate ? (
-                      format(formData.endDate, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span>Selecione...</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setFormData(prev => ({ ...prev, endDate: date }));
-                        setShowEndCalendar(false);
-                      }
-                    }}
-                    disabled={(date) => date <= formData.startDate}
-                    initialFocus
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DatePickerField
+              label="Data de entrada"
+              value={formData.startDate}
+              onChange={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
+              disabledDate={(date) => date < new Date()}
+            />
+            <DatePickerField
+              label="Data de saída"
+              value={formData.endDate}
+              onChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
+              disabledDate={(date) => date <= formData.startDate}
+            />
           </div>
 
           {/* Número de hóspedes */}
