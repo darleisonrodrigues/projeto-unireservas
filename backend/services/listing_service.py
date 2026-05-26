@@ -7,6 +7,7 @@ from datetime import datetime
 import uuid
 
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.listing import Listing, ListingCreate, ListingUpdate
 
@@ -63,16 +64,16 @@ class ListingService:
         
         # Aplicar filtros
         if user_id:
-            query = query.where("user_id", "==", user_id)
+            query = query.where(filter=FieldFilter("user_id", "==", user_id))
         
         if property_type and property_type != "todos":
-            query = query.where("type", "==", property_type)
+            query = query.where(filter=FieldFilter("type", "==", property_type))
         
         if university:
-            query = query.where("university", "==", university)
+            query = query.where(filter=FieldFilter("university", "==", university))
         
         if is_active is not None:
-            query = query.where("is_active", "==", is_active)
+            query = query.where(filter=FieldFilter("is_active", "==", is_active))
         
         # Ordenação por data de criação (mais recentes primeiro)
         query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
@@ -165,11 +166,11 @@ class ListingService:
         query = self.db.collection(self.collection)
         
         # Filtrar apenas listings ativos
-        query = query.where("is_active", "==", True)
+        query = query.where(filter=FieldFilter("is_active", "==", True))
         
         if search_term:
-            query = query.where("title", ">=", search_term)
-            query = query.where("title", "<=", search_term + "\uf8ff")
+            query = query.where(filter=FieldFilter("title", ">=", search_term))
+            query = query.where(filter=FieldFilter("title", "<=", search_term + "\uf8ff"))
         
         # Ordenação por relevância (views e rating)
         query = query.order_by("views", direction=firestore.Query.DESCENDING)
@@ -217,7 +218,7 @@ class ListingService:
         """Buscar listings por universidade"""
         query = self.db.collection(self.collection)
         query = query.where("university", "==", university)
-        query = query.where("is_active", "==", True)
+        query = query.where(filter=FieldFilter("is_active", "==", True))
         query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
         
         # Total de documentos
