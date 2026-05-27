@@ -6,7 +6,6 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.listing import Listing, ListingCreate, ListingUpdate
@@ -51,8 +50,8 @@ class ListingService:
         return None
 
     def get_listings(
-        self, 
-        page: int = 1, 
+        self,
+        page: int = 1,
         per_page: int = 10,
         user_id: Optional[str] = None,
         property_type: Optional[str] = None,
@@ -61,40 +60,26 @@ class ListingService:
     ) -> Dict[str, Any]:
       #Buscar listings com filtros e paginação
         query = self.db.collection(self.collection)
-        
-        # Aplicar filtros
+
         if user_id:
             query = query.where(filter=FieldFilter("user_id", "==", user_id))
-        
         if property_type and property_type != "todos":
             query = query.where(filter=FieldFilter("type", "==", property_type))
-        
         if university:
             query = query.where(filter=FieldFilter("university", "==", university))
-        
         if is_active is not None:
             query = query.where(filter=FieldFilter("is_active", "==", is_active))
-        
-        # Ordenação por data de criação (mais recentes primeiro)
-        query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
-        
-        # Total de documentos (antes da paginação)
-        total_docs = len(list(query.stream()))
-        
-        # Paginação
+
+        # Busca única — ordena em Python (evita índice composto no Firestore)
+        all_docs = list(query.stream())
+        all_listings = [Listing(**doc.to_dict()) for doc in all_docs]
+        all_listings.sort(key=lambda x: x.created_at or datetime.min, reverse=True)
+
+        total_docs = len(all_listings)
         offset = (page - 1) * per_page
-        query = query.offset(offset).limit(per_page)
-        
-        # Executar query
-        docs = query.stream()
-        listings = []
-        
-        for doc in docs:
-            data = doc.to_dict()
-            listings.append(Listing(**data))
-        
-        total_pages = (total_docs + per_page - 1) // per_page
-        
+        listings = all_listings[offset:offset + per_page]
+        total_pages = (total_docs + per_page - 1) // per_page if total_docs > 0 else 1
+
         return {
             "listings": listings,
             "total": total_docs,
@@ -164,31 +149,23 @@ class ListingService:
     def search_listings(self, search_term: str, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         #Buscar listings por termo
         query = self.db.collection(self.collection)
-        
-        # Filtrar apenas listings ativos
         query = query.where(filter=FieldFilter("is_active", "==", True))
-        
+
         if search_term:
             query = query.where(filter=FieldFilter("title", ">=", search_term))
             query = query.where(filter=FieldFilter("title", "<=", search_term + "\uf8ff"))
-        
-        # Ordenação por relevância (views e rating)
-        query = query.order_by("views", direction=firestore.Query.DESCENDING)
-        
-        # Paginação
+
+        # Busca única — ordena por views em Python (evita índice composto)
+        all_docs = list(query.stream())
+        all_listings = [Listing(**doc.to_dict()) for doc in all_docs]
+        all_listings.sort(key=lambda x: x.views or 0, reverse=True)
+
         offset = (page - 1) * per_page
-        query = query.offset(offset).limit(per_page)
-        
-        docs = query.stream()
-        listings = []
-        
-        for doc in docs:
-            data = doc.to_dict()
-            listings.append(Listing(**data))
-        
+        listings = all_listings[offset:offset + per_page]
+
         return {
             "listings": listings,
-            "total": len(listings),
+            "total": len(all_listings),
             "page": page,
             "per_page": per_page
         }
@@ -217,26 +194,19 @@ class ListingService:
     def get_listings_by_university(self, university: str, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         """Buscar listings por universidade"""
         query = self.db.collection(self.collection)
-        query = query.where("university", "==", university)
+        query = query.where(filter=FieldFilter("university", "==", university))
         query = query.where(filter=FieldFilter("is_active", "==", True))
-        query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
-        
-        # Total de documentos
-        total_docs = len(list(query.stream()))
-        
-        # Paginação
+
+        # Busca única — ordena em Python (evita índice composto no Firestore)
+        all_docs = list(query.stream())
+        all_listings = [Listing(**doc.to_dict()) for doc in all_docs]
+        all_listings.sort(key=lambda x: x.created_at or datetime.min, reverse=True)
+
+        total_docs = len(all_listings)
         offset = (page - 1) * per_page
-        query = query.offset(offset).limit(per_page)
-        
-        docs = query.stream()
-        listings = []
-        
-        for doc in docs:
-            data = doc.to_dict()
-            listings.append(Listing(**data))
-        
-        total_pages = (total_docs + per_page - 1) // per_page
-        
+        listings = all_listings[offset:offset + per_page]
+        total_pages = (total_docs + per_page - 1) // per_page if total_docs > 0 else 1
+
         return {
             "listings": listings,
             "total": total_docs,
