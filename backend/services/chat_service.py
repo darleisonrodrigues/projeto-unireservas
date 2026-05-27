@@ -407,40 +407,32 @@ class ChatService:
         batch.commit()
 
     def _batch_fetch_properties(self, property_ids: List[str]) -> Dict[str, Dict[str, Any]]:
-        """Buscar propriedades em batch para cache"""
+        """Buscar propriedades em 1 round-trip via get_all"""
         db = self._get_db()
-        properties_cache = {}
+        cache: Dict[str, Dict[str, Any]] = {}
+        unique_ids = list({pid for pid in property_ids if pid})
+        if not unique_ids:
+            return cache
 
-        # Firestore suporta no máximo 10 documentos por batch get
-        for i in range(0, len(property_ids), 10):
-            batch_ids = property_ids[i:i+10]
-            for property_id in batch_ids:
-                try:
-                    doc = db.collection(self.properties_collection).document(property_id).get()
-                    if doc.exists:
-                        properties_cache[property_id] = doc.to_dict()
-                except Exception:
-                    continue
-
-        return properties_cache
+        refs = [db.collection(self.properties_collection).document(pid) for pid in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                cache[snap.id] = snap.to_dict()
+        return cache
 
     def _batch_fetch_users(self, user_ids: List[str]) -> Dict[str, Dict[str, Any]]:
-        """Buscar usuários em batch para cache"""
+        """Buscar usuários em 1 round-trip via get_all"""
         db = self._get_db()
-        users_cache = {}
+        cache: Dict[str, Dict[str, Any]] = {}
+        unique_ids = list({uid for uid in user_ids if uid})
+        if not unique_ids:
+            return cache
 
-        # Firestore suporta no máximo 10 documentos por batch get
-        for i in range(0, len(user_ids), 10):
-            batch_ids = user_ids[i:i+10]
-            for user_id in batch_ids:
-                try:
-                    doc = db.collection(self.users_collection).document(user_id).get()
-                    if doc.exists:
-                        users_cache[user_id] = doc.to_dict()
-                except Exception:
-                    continue
-
-        return users_cache
+        refs = [db.collection(self.users_collection).document(uid) for uid in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                cache[snap.id] = snap.to_dict()
+        return cache
 
     def _batch_fetch_messages_by_chats(self, chat_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
         """Buscar mensagens de múltiplos chats em batch usando `in` (até 30 por query)"""
