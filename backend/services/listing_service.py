@@ -149,15 +149,14 @@ class ListingService:
     def search_listings(self, search_term: str, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         #Buscar listings por termo
         query = self.db.collection(self.collection)
-        query = query.where(filter=FieldFilter("is_active", "==", True))
 
         if search_term:
             query = query.where(filter=FieldFilter("title", ">=", search_term))
             query = query.where(filter=FieldFilter("title", "<=", search_term + "\uf8ff"))
 
-        # Busca única — ordena por views em Python (evita índice composto)
+        # is_active filtrado em Python — combinar equality + range em campos distintos exige índice composto
         all_docs = list(query.stream())
-        all_listings = [Listing(**doc.to_dict()) for doc in all_docs]
+        all_listings = [Listing(**doc.to_dict()) for doc in all_docs if doc.to_dict().get("is_active", True)]
         all_listings.sort(key=lambda x: x.views or 0, reverse=True)
 
         offset = (page - 1) * per_page
