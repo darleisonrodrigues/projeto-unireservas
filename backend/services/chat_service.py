@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
-from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
 from models.rental import ChatCreate, MessageCreate, ChatResponse, MessageResponse, ChatListResponse, ChatMessagesResponse
@@ -149,10 +148,9 @@ class ChatService:
         # Definir campo baseado no tipo de usuário
         field = "student_id" if user_type == "student" else "advertiser_id"
 
-        # Buscar chats do usuário ordenados por atualização
+        # Ordenação em Python — combinar equality + order_by em campos distintos exige índice composto
         chats_query = db.collection(self.chats_collection)\
             .where(filter=FieldFilter(field, "==", user_id))\
-            .order_by("updated_at", direction=firestore.Query.DESCENDING)\
             .stream()
 
         chats = []
@@ -166,6 +164,9 @@ class ChatService:
             property_ids.add(chat_data["property_id"])
             user_ids.add(chat_data["student_id"])
             user_ids.add(chat_data["advertiser_id"])
+
+        # Ordenar por updated_at desc em Python
+        chats.sort(key=lambda c: c.get("updated_at") or datetime.min, reverse=True)
 
         # Batch fetch para propriedades e usuários
         properties_cache = self._batch_fetch_properties(list(property_ids))
@@ -215,31 +216,34 @@ class ChatService:
                 'advertiser_id': chat_data["advertiser_id"]
             }
 
-        # Calcular offset para paginação
-        offset = (page - 1) * limit
-
-        # Buscar mensagens do chat com paginação super otimizada
-        # Usar apenas campos necessários para reduzir dados transferidos
+        # Buscar mensagens — equality + order_by em campos distintos exige índice composto, ordena em Python
         messages_query = db.collection(self.messages_collection)\
             .where(filter=FieldFilter("chat_id", "==", chat_id))\
-            .order_by("created_at", direction=firestore.Query.DESCENDING)\
-            .limit(limit)\
-            .offset(offset)\
             .stream()
+
+        all_messages = []
+        for doc in messages_query:
+            message_data = doc.to_dict()
+            message_data["_doc_id"] = doc.id
+            all_messages.append(message_data)
+
+        # Ordenar por created_at desc e paginar em Python
+        all_messages.sort(key=lambda m: m.get("created_at") or datetime.min, reverse=True)
+        offset = (page - 1) * limit
+        paginated = all_messages[offset:offset + limit]
 
         messages = []
         message_ids_to_mark_read = []
         sender_ids = set()
 
-        # Primeira passada: coletar dados básicos
-        for doc in messages_query:
-            message_data = doc.to_dict()
+        for message_data in paginated:
+            doc_id = message_data.pop("_doc_id", None)
             messages.append(message_data)
             sender_ids.add(message_data["sender_id"])
 
             # Coletar IDs para marcar como lidas
-            if not message_data.get("is_read", True) and message_data.get("sender_id") != user_id:
-                message_ids_to_mark_read.append(doc.id)
+            if doc_id and not message_data.get("is_read", True) and message_data.get("sender_id") != user_id:
+                message_ids_to_mark_read.append(doc_id)
 
         # Buscar nomes dos remetentes em batch
         sender_names_cache = self._batch_fetch_sender_names(list(sender_ids))
@@ -325,26 +329,26 @@ class ChatService:
             advertiser_data = advertiser_doc.to_dict()
             chat_data["advertiser_name"] = advertiser_data.get("name") or advertiser_data.get("company_name")
 
-        # Buscar última mensagem ordenada e limitada
-        last_message_query = db.collection(self.messages_collection)\
+        # Stream único de mensagens — order_by + != exigem índices compostos, calcula em Python
+        messages_query = db.collection(self.messages_collection)\
             .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
-            .order_by("created_at", direction=firestore.Query.DESCENDING)\
-            .limit(1)\
             .stream()
 
+        all_messages = [doc.to_dict() for doc in messages_query]
+
+        # Última mensagem por created_at desc
         last_message = None
-        for doc in last_message_query:
-            last_message = doc.to_dict()
-            break
+        if all_messages:
+            last_message = max(
+                all_messages,
+                key=lambda m: m.get("created_at") or datetime.min
+            )
 
-        # Contar mensagens não lidas em consulta separada otimizada
-        unread_query = db.collection(self.messages_collection)\
-            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
-            .where(filter=FieldFilter("is_read", "==", False))\
-            .where(filter=FieldFilter("sender_id", "!=", current_user_id))\
-            .stream()
-
-        unread_count = sum(1 for _ in unread_query)
+        # Contar não lidas de outros remetentes
+        unread_count = sum(
+            1 for m in all_messages
+            if not m.get("is_read", True) and m.get("sender_id") != current_user_id
+        )
 
         if last_message:
             chat_data["last_message"] = last_message.get("content")
@@ -455,29 +459,27 @@ class ChatService:
         if advertiser_data:
             chat_data["advertiser_name"] = advertiser_data.get("name") or advertiser_data.get("company_name")
 
-        # Buscar última mensagem e contagem otimizada
+        # Stream único de mensagens — order_by + != exigem índices compostos, calcula em Python
         db = self._get_db()
-
-        # Buscar última mensagem ordenada e limitada
-        last_message_query = db.collection(self.messages_collection)\
+        messages_query = db.collection(self.messages_collection)\
             .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
-            .order_by("created_at", direction=firestore.Query.DESCENDING)\
-            .limit(1)\
             .stream()
 
+        all_messages = [doc.to_dict() for doc in messages_query]
+
+        # Última mensagem por created_at desc
         last_message = None
-        for doc in last_message_query:
-            last_message = doc.to_dict()
-            break
+        if all_messages:
+            last_message = max(
+                all_messages,
+                key=lambda m: m.get("created_at") or datetime.min
+            )
 
-        # Contar mensagens não lidas em consulta separada otimizada
-        unread_query = db.collection(self.messages_collection)\
-            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
-            .where(filter=FieldFilter("is_read", "==", False))\
-            .where(filter=FieldFilter("sender_id", "!=", current_user_id))\
-            .stream()
-
-        unread_count = sum(1 for _ in unread_query)
+        # Contar não lidas de outros remetentes
+        unread_count = sum(
+            1 for m in all_messages
+            if not m.get("is_read", True) and m.get("sender_id") != current_user_id
+        )
 
         if last_message:
             chat_data["last_message"] = last_message.get("content")
