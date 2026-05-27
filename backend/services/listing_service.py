@@ -159,14 +159,17 @@ class ListingService:
         all_listings = [Listing(**doc.to_dict()) for doc in all_docs if doc.to_dict().get("is_active", True)]
         all_listings.sort(key=lambda x: x.views or 0, reverse=True)
 
+        total_docs = len(all_listings)
         offset = (page - 1) * per_page
         listings = all_listings[offset:offset + per_page]
+        total_pages = (total_docs + per_page - 1) // per_page if total_docs > 0 else 1
 
         return {
             "listings": listings,
-            "total": len(all_listings),
+            "total": total_docs,
             "page": page,
-            "per_page": per_page
+            "per_page": per_page,
+            "total_pages": total_pages
         }
 
     def update_photos(self, listing_id: str, photo_urls: List[str], user_id: str) -> bool:
