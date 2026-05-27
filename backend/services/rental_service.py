@@ -70,6 +70,20 @@ class RentalService:
         return interest_data
     
         #Buscar interesses do estudante
+    def _batch_fetch_docs(self, collection: str, doc_ids: List[str]) -> Dict[str, Dict[str, Any]]:
+        """Buscar múltiplos documentos por ID em 1 round-trip via get_all"""
+        db = self._get_db()
+        cache: Dict[str, Dict[str, Any]] = {}
+        unique_ids = list({did for did in doc_ids if did})
+        if not unique_ids:
+            return cache
+
+        refs = [db.collection(collection).document(did) for did in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                cache[snap.id] = snap.to_dict()
+        return cache
+
     def get_student_interests(self, student_id: str) -> List[Dict[str, Any]]:
         print(f"[RentalService] Buscando interesses do estudante: {student_id}")
 
@@ -77,27 +91,26 @@ class RentalService:
         if not db:
             raise Exception("Banco de dados não disponível")
 
-        interests = []
         docs = db.collection(self.interests_collection)\
             .where(filter=FieldFilter("student_id", "==", student_id))\
             .stream()
 
-        for doc in docs:
-            interest_data = doc.to_dict()
+        interests = [doc.to_dict() for doc in docs]
 
-            # Buscar dados da propriedade
-            property_doc = db.collection("properties").document(interest_data["property_id"]).get()
-            if property_doc.exists:
-                interest_data["property"] = property_doc.to_dict()
+        # Batch fetch das propriedades referenciadas
+        property_ids = [i["property_id"] for i in interests if i.get("property_id")]
+        properties_cache = self._batch_fetch_docs("properties", property_ids)
 
-            interests.append(interest_data)
+        for interest_data in interests:
+            prop = properties_cache.get(interest_data.get("property_id"))
+            if prop:
+                interest_data["property"] = prop
 
-        # Ordenar por created_at em Python (mais recentes primeiro)
         interests.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
 
         print(f"[OK] [RentalService] Encontrados {len(interests)} interesses")
         return interests
-    
+
         #Buscar interesses recebidos pelo anunciante
     def get_advertiser_interests(self, advertiser_id: str) -> List[Dict[str, Any]]:
         print(f"[RentalService] Buscando interesses do anunciante: {advertiser_id}")
@@ -106,27 +119,26 @@ class RentalService:
         if not db:
             raise Exception("Banco de dados não disponível")
 
-        interests = []
         docs = db.collection(self.interests_collection)\
             .where(filter=FieldFilter("advertiser_id", "==", advertiser_id))\
             .stream()
 
-        for doc in docs:
-            interest_data = doc.to_dict()
+        interests = [doc.to_dict() for doc in docs]
 
-            # Buscar dados da propriedade
-            property_doc = db.collection("properties").document(interest_data["property_id"]).get()
-            if property_doc.exists:
-                interest_data["property"] = property_doc.to_dict()
+        # Batch fetch das propriedades e estudantes referenciados
+        property_ids = [i["property_id"] for i in interests if i.get("property_id")]
+        student_ids = [i["student_id"] for i in interests if i.get("student_id")]
+        properties_cache = self._batch_fetch_docs("properties", property_ids)
+        students_cache = self._batch_fetch_docs("users", student_ids)
 
-            # Buscar dados do estudante
-            student_doc = db.collection("users").document(interest_data["student_id"]).get()
-            if student_doc.exists:
-                interest_data["student"] = student_doc.to_dict()
+        for interest_data in interests:
+            prop = properties_cache.get(interest_data.get("property_id"))
+            if prop:
+                interest_data["property"] = prop
+            student = students_cache.get(interest_data.get("student_id"))
+            if student:
+                interest_data["student"] = student
 
-            interests.append(interest_data)
-
-        # Ordenar por created_at em Python (mais recentes primeiro)
         interests.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
 
         print(f"[OK] [RentalService] Encontrados {len(interests)} interesses")

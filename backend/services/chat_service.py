@@ -168,14 +168,18 @@ class ChatService:
         # Ordenar por updated_at desc em Python
         chats.sort(key=lambda c: c.get("updated_at") or datetime.min, reverse=True)
 
-        # Batch fetch para propriedades e usuários
+        # Batch fetch para propriedades, usuários e mensagens
         properties_cache = self._batch_fetch_properties(list(property_ids))
         users_cache = self._batch_fetch_users(list(user_ids))
+        messages_by_chat = self._batch_fetch_messages_by_chats([c["id"] for c in chats])
 
         # Enriquecer chats com dados em cache
         enriched_chats = []
         for chat_data in chats:
-            enriched_chat = self._enrich_chat_data_cached(chat_data, user_id, properties_cache, users_cache)
+            enriched_chat = self._enrich_chat_data_cached(
+                chat_data, user_id, properties_cache, users_cache,
+                messages_by_chat.get(chat_data["id"], [])
+            )
             enriched_chats.append(enriched_chat)
 
         print(f"[OK] [ChatService] Encontrados {len(enriched_chats)} chats")
@@ -438,19 +442,36 @@ class ChatService:
 
         return users_cache
 
+    def _batch_fetch_messages_by_chats(self, chat_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+        """Buscar mensagens de múltiplos chats em batch usando `in` (até 30 por query)"""
+        db = self._get_db()
+        messages_by_chat: Dict[str, List[Dict[str, Any]]] = {cid: [] for cid in chat_ids}
+
+        for i in range(0, len(chat_ids), 30):
+            batch_ids = chat_ids[i:i + 30]
+            docs = db.collection(self.messages_collection)\
+                .where(filter=FieldFilter("chat_id", "in", batch_ids))\
+                .stream()
+            for doc in docs:
+                m = doc.to_dict()
+                cid = m.get("chat_id")
+                if cid in messages_by_chat:
+                    messages_by_chat[cid].append(m)
+
+        return messages_by_chat
+
     def _enrich_chat_data_cached(self, chat_data: Dict[str, Any], current_user_id: str,
                                 properties_cache: Dict[str, Dict[str, Any]],
-                                users_cache: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """Enriquecer dados do chat usando cache para melhor performance"""
+                                users_cache: Dict[str, Dict[str, Any]],
+                                chat_messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Enriquecer chat com dados pré-carregados — sem queries adicionais ao Firestore"""
 
-        # Usar dados em cache para propriedade
         property_data = properties_cache.get(chat_data["property_id"])
         if property_data:
             chat_data["property_title"] = property_data.get("title")
             chat_data["property_images"] = property_data.get("images", [])
             chat_data["property_price"] = property_data.get("price")
 
-        # Usar dados em cache para usuários
         student_data = users_cache.get(chat_data["student_id"])
         if student_data:
             chat_data["student_name"] = student_data.get("name")
@@ -459,25 +480,15 @@ class ChatService:
         if advertiser_data:
             chat_data["advertiser_name"] = advertiser_data.get("name") or advertiser_data.get("company_name")
 
-        # Stream único de mensagens — order_by + != exigem índices compostos, calcula em Python
-        db = self._get_db()
-        messages_query = db.collection(self.messages_collection)\
-            .where(filter=FieldFilter("chat_id", "==", chat_data["id"]))\
-            .stream()
-
-        all_messages = [doc.to_dict() for doc in messages_query]
-
-        # Última mensagem por created_at desc
         last_message = None
-        if all_messages:
+        if chat_messages:
             last_message = max(
-                all_messages,
+                chat_messages,
                 key=lambda m: m.get("created_at") or datetime.min
             )
 
-        # Contar não lidas de outros remetentes
         unread_count = sum(
-            1 for m in all_messages
+            1 for m in chat_messages
             if not m.get("is_read", True) and m.get("sender_id") != current_user_id
         )
 
