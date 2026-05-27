@@ -197,22 +197,38 @@ class ChatService:
         if not db:
             raise Exception("Banco de dados não disponível")
 
-        # Cache da verificação de permissão para evitar consulta repetida
         if not hasattr(self, '_chat_permissions_cache'):
             self._chat_permissions_cache = {}
 
         cache_key = f"{chat_id}_{user_id}"
-        if cache_key not in self._chat_permissions_cache:
-            # Verificar se o usuário tem acesso ao chat
+        cached = self._chat_permissions_cache.get(cache_key)
+
+        # Verificação de permissão + stream de mensagens em paralelo (threading)
+        import threading
+
+        all_messages: List[Dict[str, Any]] = []
+        permission_error = {"msg": None}
+
+        def fetch_messages():
+            messages_query = db.collection(self.messages_collection)\
+                .where(filter=FieldFilter("chat_id", "==", chat_id))\
+                .stream()
+            for doc in messages_query:
+                m = doc.to_dict()
+                m["_doc_id"] = doc.id
+                all_messages.append(m)
+
+        def verify_permission():
+            if cached:
+                return
             chat_doc = db.collection(self.chats_collection).document(chat_id).get()
             if not chat_doc.exists:
-                raise Exception("Chat não encontrado")
-
+                permission_error["msg"] = "Chat não encontrado"
+                return
             chat_data = chat_doc.to_dict()
             if user_id not in [chat_data["student_id"], chat_data["advertiser_id"]]:
-                raise Exception("Você não tem permissão para ver este chat")
-
-            # Cache por 5 minutos
+                permission_error["msg"] = "Você não tem permissão para ver este chat"
+                return
             self._chat_permissions_cache[cache_key] = {
                 'valid': True,
                 'timestamp': datetime.utcnow(),
@@ -220,16 +236,13 @@ class ChatService:
                 'advertiser_id': chat_data["advertiser_id"]
             }
 
-        # Buscar mensagens — equality + order_by em campos distintos exige índice composto, ordena em Python
-        messages_query = db.collection(self.messages_collection)\
-            .where(filter=FieldFilter("chat_id", "==", chat_id))\
-            .stream()
+        t1 = threading.Thread(target=verify_permission)
+        t2 = threading.Thread(target=fetch_messages)
+        t1.start(); t2.start()
+        t1.join(); t2.join()
 
-        all_messages = []
-        for doc in messages_query:
-            message_data = doc.to_dict()
-            message_data["_doc_id"] = doc.id
-            all_messages.append(message_data)
+        if permission_error["msg"]:
+            raise Exception(permission_error["msg"])
 
         # Ordenar por created_at desc e paginar em Python
         all_messages.sort(key=lambda m: m.get("created_at") or datetime.min, reverse=True)
@@ -277,36 +290,36 @@ class ChatService:
         return enriched_messages
 
     def _batch_fetch_sender_names(self, sender_ids: List[str]) -> Dict[str, str]:
-        """Buscar nomes dos remetentes em batch para cache"""
+        """Buscar nomes dos remetentes em batch via get_all (1 round-trip)"""
         db = self._get_db()
-        names_cache = {}
+        names_cache: Dict[str, str] = {}
 
-        # Cache local de nomes por 5 minutos
         if not hasattr(self, '_sender_names_cache'):
             self._sender_names_cache = {}
 
+        # Verificar cache local primeiro
+        now = datetime.utcnow()
+        missing_ids = []
         for sender_id in sender_ids:
-            if sender_id in self._sender_names_cache:
-                cache_entry = self._sender_names_cache[sender_id]
-                # Cache válido por 5 minutos
-                if (datetime.utcnow() - cache_entry['timestamp']).seconds < 300:
-                    names_cache[sender_id] = cache_entry['name']
-                    continue
+            if not sender_id:
+                continue
+            entry = self._sender_names_cache.get(sender_id)
+            if entry and (now - entry['timestamp']).seconds < 300:
+                names_cache[sender_id] = entry['name']
+            else:
+                missing_ids.append(sender_id)
 
-            try:
-                doc = db.collection(self.users_collection).document(sender_id).get()
-                if doc.exists:
-                    sender_data = doc.to_dict()
-                    name = sender_data.get("name") or sender_data.get("company_name") or "Usuário"
-                    names_cache[sender_id] = name
+        if not missing_ids:
+            return names_cache
 
-                    # Atualizar cache local
-                    self._sender_names_cache[sender_id] = {
-                        'name': name,
-                        'timestamp': datetime.utcnow()
-                    }
-            except Exception:
-                names_cache[sender_id] = "Usuário"
+        unique_ids = list(set(missing_ids))
+        refs = [db.collection(self.users_collection).document(uid) for uid in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                data = snap.to_dict()
+                name = data.get("name") or data.get("company_name") or "Usuário"
+                names_cache[snap.id] = name
+                self._sender_names_cache[snap.id] = {'name': name, 'timestamp': now}
 
         return names_cache
 
@@ -314,23 +327,27 @@ class ChatService:
         """Enriquecer dados do chat com informações adicionais"""
         db = self._get_db()
 
-        # Buscar informações da propriedade
-        property_doc = db.collection(self.properties_collection).document(chat_data["property_id"]).get()
-        if property_doc.exists:
-            property_data = property_doc.to_dict()
+        # Batch fetch: 1 property + 2 users em 1 round-trip via get_all
+        property_ref = db.collection(self.properties_collection).document(chat_data["property_id"])
+        student_ref = db.collection(self.users_collection).document(chat_data["student_id"])
+        advertiser_ref = db.collection(self.users_collection).document(chat_data["advertiser_id"])
+
+        snapshots = {snap.reference.path: snap for snap in db.get_all([property_ref, student_ref, advertiser_ref])}
+
+        property_snap = snapshots.get(property_ref.path)
+        if property_snap and property_snap.exists:
+            property_data = property_snap.to_dict()
             chat_data["property_title"] = property_data.get("title")
             chat_data["property_images"] = property_data.get("images", [])
             chat_data["property_price"] = property_data.get("price")
 
-        # Buscar informações dos participantes
-        student_doc = db.collection(self.users_collection).document(chat_data["student_id"]).get()
-        if student_doc.exists:
-            student_data = student_doc.to_dict()
-            chat_data["student_name"] = student_data.get("name")
+        student_snap = snapshots.get(student_ref.path)
+        if student_snap and student_snap.exists:
+            chat_data["student_name"] = student_snap.to_dict().get("name")
 
-        advertiser_doc = db.collection(self.users_collection).document(chat_data["advertiser_id"]).get()
-        if advertiser_doc.exists:
-            advertiser_data = advertiser_doc.to_dict()
+        advertiser_snap = snapshots.get(advertiser_ref.path)
+        if advertiser_snap and advertiser_snap.exists:
+            advertiser_data = advertiser_snap.to_dict()
             chat_data["advertiser_name"] = advertiser_data.get("name") or advertiser_data.get("company_name")
 
         # Stream único de mensagens — order_by + != exigem índices compostos, calcula em Python
@@ -407,40 +424,32 @@ class ChatService:
         batch.commit()
 
     def _batch_fetch_properties(self, property_ids: List[str]) -> Dict[str, Dict[str, Any]]:
-        """Buscar propriedades em batch para cache"""
+        """Buscar propriedades em 1 round-trip via get_all"""
         db = self._get_db()
-        properties_cache = {}
+        cache: Dict[str, Dict[str, Any]] = {}
+        unique_ids = list({pid for pid in property_ids if pid})
+        if not unique_ids:
+            return cache
 
-        # Firestore suporta no máximo 10 documentos por batch get
-        for i in range(0, len(property_ids), 10):
-            batch_ids = property_ids[i:i+10]
-            for property_id in batch_ids:
-                try:
-                    doc = db.collection(self.properties_collection).document(property_id).get()
-                    if doc.exists:
-                        properties_cache[property_id] = doc.to_dict()
-                except Exception:
-                    continue
-
-        return properties_cache
+        refs = [db.collection(self.properties_collection).document(pid) for pid in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                cache[snap.id] = snap.to_dict()
+        return cache
 
     def _batch_fetch_users(self, user_ids: List[str]) -> Dict[str, Dict[str, Any]]:
-        """Buscar usuários em batch para cache"""
+        """Buscar usuários em 1 round-trip via get_all"""
         db = self._get_db()
-        users_cache = {}
+        cache: Dict[str, Dict[str, Any]] = {}
+        unique_ids = list({uid for uid in user_ids if uid})
+        if not unique_ids:
+            return cache
 
-        # Firestore suporta no máximo 10 documentos por batch get
-        for i in range(0, len(user_ids), 10):
-            batch_ids = user_ids[i:i+10]
-            for user_id in batch_ids:
-                try:
-                    doc = db.collection(self.users_collection).document(user_id).get()
-                    if doc.exists:
-                        users_cache[user_id] = doc.to_dict()
-                except Exception:
-                    continue
-
-        return users_cache
+        refs = [db.collection(self.users_collection).document(uid) for uid in unique_ids]
+        for snap in db.get_all(refs):
+            if snap.exists:
+                cache[snap.id] = snap.to_dict()
+        return cache
 
     def _batch_fetch_messages_by_chats(self, chat_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
         """Buscar mensagens de múltiplos chats em batch usando `in` (até 30 por query)"""
