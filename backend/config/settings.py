@@ -19,12 +19,7 @@ class Settings(BaseSettings):
     FIREBASE_CLIENT_X509_CERT_URL: str = ""
 
     # CORS
-    ALLOWED_ORIGINS: str = (
-        "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,"
-        "http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,"
-        "http://localhost:8080,http://127.0.0.1:8080,http://127.0.0.1:8000,https://site-unireservas-ykc4.onrender.com/,"
-        "http://200.98.64.110:3001,http://200.98.64.110"
-    )
+    ALLOWED_ORIGINS: str = ""
 
     # JWT -- REMOVIDO (usado para tests)
     SECRET_KEY: str = ""
@@ -37,7 +32,7 @@ class Settings(BaseSettings):
 
     # Converte a string de origins em uma lista
     def get_origins_list(self) -> List[str]:
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     # Retorna as credenciais do Firebase no formato esperado pelo Admin SDK
     def get_firebase_credentials(self) -> dict:
@@ -55,7 +50,12 @@ class Settings(BaseSettings):
         }
 
     class Config:
-        env_file = ".env"
+        # Tenta carregar .env para desenvolvimento local
+        # No deploy (Dokploy/Docker), as variáveis vêm do ambiente do sistema
+        _root_env = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+        env_file = _root_env if os.path.exists(_root_env) else ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 settings = Settings()
