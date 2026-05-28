@@ -53,25 +53,12 @@ os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Configuração CORS
-origins = [
-    "http://200.98.64.110/",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:8080",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:8080",
-    "http://127.0.0.1:8081",
-    "http://127.0.0.1:8082",
-    "http://127.0.0.1:8083",
-]
+origins = settings.get_origins_list()
+print(f"CORS origins configuradas: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Libera tudo no desenvolvimento
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
