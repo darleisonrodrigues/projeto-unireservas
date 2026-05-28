@@ -19,11 +19,10 @@ class Settings(BaseSettings):
     FIREBASE_CLIENT_X509_CERT_URL: str = ""
 
     # CORS
-    ALLOWED_ORIGINS: str = (
+    ALLOWED_ORIGINS: str = os.getenv(
+        "ALLOWED_ORIGINS",
         "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,"
-        "http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,"
-        "http://localhost:8080,http://127.0.0.1:8080,http://127.0.0.1:8000,https://site-unireservas-ykc4.onrender.com/,"
-        "http://200.98.64.110:3001,http://200.98.64.110"
+        "http://localhost:8080"
     )
 
     # JWT -- REMOVIDO (usado para tests)
