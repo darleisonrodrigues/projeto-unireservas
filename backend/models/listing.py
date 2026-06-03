@@ -3,9 +3,10 @@ Modelos para listings/anúncios
 Baseado em src/types/listing.ts
 """
 
-from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class Amenity(BaseModel):

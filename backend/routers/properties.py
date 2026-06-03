@@ -1,10 +1,11 @@
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query, File, UploadFile, Header
 from typing import Optional, Union, List
 import datetime
 import os
 
-from models.property import (Property, PropertyCreate, PropertyUpdate, PropertyResponse,PropertiesListResponse, FilterState)
+from fastapi import APIRouter, HTTPException, status, Depends, Query, File, UploadFile, Header
+
+from models.property import (Property, PropertyCreate, PropertyUpdate, PropertiesListResponse, FilterState)
 from models.profile import StudentProfile, AdvertiserProfile
 from services.property_service import PropertyService
 from utils.firebase_auth import get_current_user_firebase, get_current_advertiser_firebase
@@ -27,7 +28,7 @@ async def create_property(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao criar propriedade: {str(e)}"
-        )
+        ) from e
 
 
 #Faz upload de imagens para uma propriedade (apenas pelo proprietário)
@@ -131,12 +132,12 @@ async def upload_property_images(
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail=f"Erro ao fazer upload do arquivo {file.filename}: {str(e)} (Fallback também falhou: {str(local_error)})"
-                    )
+                    ) from e
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Erro ao fazer upload do arquivo {file.filename}: {str(e)}"
-                )
+                ) from e
 
     if not image_urls:
         raise HTTPException(
@@ -154,7 +155,7 @@ async def upload_property_images(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao salvar URLs das imagens: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/", response_model=PropertiesListResponse)
@@ -166,7 +167,7 @@ async def list_properties(
     location: Optional[str] = Query(None),
     sort_by: Optional[str] = Query("relevancia"),
     search_term: Optional[str] = Query(None),
-    amenities: Optional[str] = Query(None), 
+    amenities: Optional[str] = Query(None),
     authorization: Optional[str] = Header(None)
 ):
     try:
@@ -213,7 +214,7 @@ async def list_properties(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar propriedades: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/my", response_model=PropertiesListResponse)
@@ -242,7 +243,7 @@ async def list_my_properties(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar suas propriedades: {str(e)}"
-        )
+        ) from e
 
     #Obter detalhes de uma propriedade específica
 @router.get("/{property_id}", response_model=Property)
@@ -261,7 +262,7 @@ async def get_property(property_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar propriedade: {str(e)}"
-        )
+        ) from e
 
     #Atualizar propriedade (apenas pelo proprietário)
 @router.put("/{property_id}", response_model=Property)
@@ -287,11 +288,11 @@ async def update_property(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=str(e)
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao atualizar propriedade: {str(e)}"
-        )
+        ) from e
 
     #Deletar propriedade (apenas pelo proprietário)
 @router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -313,11 +314,11 @@ async def delete_property(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=str(e)
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar propriedade: {str(e)}"
-        )
+        ) from e
 
 
 # Deletar imagens específicas de uma propriedade
@@ -361,7 +362,7 @@ async def delete_property_images(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar imagens: {str(e)}"
-        )
+        ) from e
 
 
 # Reordenar imagens de uma propriedade
@@ -405,7 +406,7 @@ async def reorder_property_images(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao reordenar imagens: {str(e)}"
-        )
+        ) from e
 
 
     #Adicionar propriedade aos favoritos
@@ -432,7 +433,7 @@ async def add_to_favorites(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao adicionar favorito: {str(e)}"
-        )
+        ) from e
 
     #Remover propriedade dos favoritos
 @router.delete("/{property_id}/favorite")
@@ -458,7 +459,7 @@ async def remove_from_favorites(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao remover favorito: {str(e)}"
-        )
+        ) from e
 
     #Buscar propriedades por termo
 @router.get("/search/", response_model=PropertiesListResponse)
@@ -481,4 +482,4 @@ async def search_properties(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro na busca: {str(e)}"
-        )
+        ) from e

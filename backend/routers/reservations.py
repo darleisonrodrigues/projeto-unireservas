@@ -44,8 +44,8 @@ async def create_reservation(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
-    
+        ) from e
+
     #Buscar reservas do usuário (estudante ou anunciante)
 @router.get("/my", response_model=ApiResponse)
 async def get_my_reservations(current_user = Depends(get_current_user_firebase)):
@@ -68,7 +68,7 @@ async def get_my_reservations(current_user = Depends(get_current_user_firebase))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
+        ) from e
 
     #Buscar reserva específica por ID
 @router.get("/{reservation_id}", response_model=ApiResponse)
@@ -99,8 +99,8 @@ async def get_reservation(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-    
+        ) from e
+
     #Atualizar reserva
 @router.put("/{reservation_id}", response_model=ApiResponse)
 async def update_reservation(
@@ -134,7 +134,7 @@ async def update_reservation(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
+        ) from e
 
     #Cancelar reserva
 @router.patch("/{reservation_id}/cancel", response_model=ApiResponse)
@@ -165,8 +165,8 @@ async def cancel_reservation(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
-        )
-    
+        ) from e
+
     #Confirmar ou rejeitar reserva (apenas anunciantes)
 _STATUS_MESSAGES = {
     ReservationStatus.CONFIRMED: "Reserva confirmada com sucesso",
@@ -214,4 +214,4 @@ async def _update_reservation_status(
         raise
     except Exception as e:
         print(f"[RESERVATIONS] Erro ao atualizar status: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e

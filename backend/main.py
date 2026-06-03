@@ -1,10 +1,12 @@
 
+from contextlib import asynccontextmanager
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
 import uvicorn
-import os
+
 from config.firebase_config import initialize_firebase
 from config.settings import settings
 

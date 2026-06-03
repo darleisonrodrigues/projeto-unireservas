@@ -1,13 +1,15 @@
 # Conteúdo FINAL e DEFINITIVO para: projeto-unireservas/backend/routers/auth_firebase.py
 
-from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import datetime, timezone
 import uuid
 import logging
 import traceback
+
+from fastapi import APIRouter, HTTPException, status, Depends
+
 from models.profile import UserCreate, ApiResponse, StudentProfile, AdvertiserProfile, Preferences
 from services.profile_service import ProfileService
-from utils.firebase_auth import create_firebase_user, verify_firebase_token, get_current_user_firebase
+from utils.firebase_auth import verify_firebase_token, get_current_user_firebase
 
 router = APIRouter()
 profile_service = ProfileService()
@@ -124,7 +126,7 @@ async def register_firebase(user_data: UserCreate):
     except Exception as e:
         logger.error(f"[REGISTRO] Erro inesperado: {str(e)}")
         logger.error(f"[REGISTRO] Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro interno do servidor: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro interno do servidor: {str(e)}") from e
 
 
 @router.post("/verify-token", response_model=ApiResponse)
@@ -147,7 +149,7 @@ async def get_current_user_info_firebase(current_user=Depends(get_current_user_f
             user_data['userType'] = user_data.pop('user_type')
         return ApiResponse(success=True, data=user_data)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 @router.post("/logout", response_model=ApiResponse)
 async def logout_firebase():

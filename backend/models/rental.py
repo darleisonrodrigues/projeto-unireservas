@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime, date
+
+from pydantic import BaseModel, Field
 
     #Modelo para criar uma reserva
 class ReservationCreate(BaseModel):

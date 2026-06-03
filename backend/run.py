@@ -9,7 +9,7 @@ if __name__ == "__main__":
     print("Documentação: https://backend-unireservas.onrender.com/docs")
     print("Health Check: https://backend-unireservas.onrender.com/health")
     print("-" * 50)
-    
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",

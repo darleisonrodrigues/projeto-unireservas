@@ -1,9 +1,11 @@
 # projeto-unireservas/backend/utils/firebase_auth.py
 
-from fastapi import Depends, HTTPException, Header, status
 from typing import Optional, Dict, Any, Union
+
+from fastapi import Depends, HTTPException, Header, status
 import firebase_admin
 from firebase_admin import auth as fb_auth
+
 from services.profile_service import ProfileService
 from models.profile import StudentProfile, AdvertiserProfile
 
@@ -25,7 +27,7 @@ def create_firebase_user(email: str, password: str, display_name: str) -> str:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao criar usuário no Firebase: {str(e)}"
-        )
+        ) from e
 
 
 
@@ -47,21 +49,21 @@ def _extract_bearer_token(authorization: Optional[str]) -> str:
 
 
 def verify_firebase_token(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
-    
+
     try:
         token = _extract_bearer_token(authorization)
         # Adicionar tolerância para clock skew (10 segundos)
         decoded = fb_auth.verify_id_token(token, clock_skew_seconds=10)
         return decoded
-    except firebase_admin._auth_utils.InvalidIdTokenError:
+    except firebase_admin._auth_utils.InvalidIdTokenError as e:
         print("[ERRO] ID token invalido")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token inválido")
-    except firebase_admin._auth_utils.ExpiredIdTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token inválido") from e
+    except firebase_admin._auth_utils.ExpiredIdTokenError as e:
         print("[ERRO] ID token expirado")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token expirado")
-    except firebase_admin._auth_utils.RevokedIdTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token expirado") from e
+    except firebase_admin._auth_utils.RevokedIdTokenError as e:
         print("[ERRO] ID token revogado")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token revogado")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ID token revogado") from e
     except Exception as e:
         import traceback
         print("[ERRO] Erro inesperado ao verificar token:", str(e))
@@ -69,7 +71,7 @@ def verify_firebase_token(authorization: Optional[str] = Header(None)) -> Dict[s
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Falha na verificação do token: {str(e)}"
-        )
+        ) from e
 
 
 def get_current_user_firebase(
@@ -95,7 +97,7 @@ def get_current_user_firebase(
 def get_current_advertiser_firebase(
     current_user: Union[StudentProfile, AdvertiserProfile] = Depends(get_current_user_firebase)
 ) -> AdvertiserProfile:
-    
+
     if current_user.user_type != "advertiser":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

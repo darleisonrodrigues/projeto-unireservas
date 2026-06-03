@@ -1,6 +1,8 @@
 
-from fastapi import APIRouter, HTTPException, status, Depends
 from typing import Union, List
+
+from fastapi import APIRouter, HTTPException, status, Depends
+
 from models.rental import RentalInterest, RentalInterestResponse
 from models.profile import StudentProfile, AdvertiserProfile
 from services.rental_service import rental_service
@@ -26,7 +28,7 @@ async def express_interest(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao demonstrar interesse: {str(e)}"
-        )
+        ) from e
 
     #Buscar interesses do estudante atual
 @router.get("/interests/my", response_model=List[RentalInterestResponse])
@@ -40,7 +42,7 @@ async def get_my_interests(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar interesses: {str(e)}"
-        )
+        ) from e
 
     #Buscar interesses recebidos pelo anunciante atual
 @router.get("/interests/received", response_model=List[RentalInterestResponse])
@@ -54,7 +56,7 @@ async def get_received_interests(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar interesses: {str(e)}"
-        )
+        ) from e
 
    #Atualizar status de um interesse (apenas anunciantes)
 @router.patch("/interests/{interest_id}/status")
@@ -82,8 +84,8 @@ async def update_interest_status(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=str(e)
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao atualizar status: {str(e)}"
-        )
+        ) from e

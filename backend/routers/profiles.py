@@ -1,10 +1,11 @@
 # Conteúdo FINAL e CORRIGIDO para: projeto-unireservas/backend/routers/profiles.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Union
 from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from services.profile_service import ProfileService, UserProfile
-from models.profile import (ApiResponse,ProfileUpdateRequest,StudentProfile,AdvertiserProfile)
+from models.profile import (ApiResponse, ProfileUpdateRequest)
 from utils.firebase_auth import get_current_user_firebase
 
 router = APIRouter()
@@ -18,7 +19,7 @@ async def get_my_profile(current_user: UserProfile = Depends(get_current_user_fi
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuário não encontrado."
         )
-    
+
     user_data = current_user.model_dump()
     if 'user_type' in user_data:
         user_data['userType'] = user_data.pop('user_type')
@@ -56,7 +57,7 @@ async def update_my_profile(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Erro ao atualizar email: {str(e)}"
-            )
+            ) from e
 
     # Adiciona a data de atualização
     update_dict["updated_at"] = datetime.now(timezone.utc)
@@ -79,7 +80,7 @@ async def update_my_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Falha ao recuperar perfil atualizado."
         )
-    
+
     updated_user_data = updated_user_doc.to_dict()
 
     return ApiResponse(
@@ -125,4 +126,4 @@ async def delete_my_profile(current_user: UserProfile = Depends(get_current_user
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar conta: {str(e)}"
-        )
+        ) from e
