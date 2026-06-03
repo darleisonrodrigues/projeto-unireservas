@@ -1,0 +1,124 @@
+{
+  "annotations": { "list": [ { "builtIn": 1, "datasource": { "type": "grafana", "uid": "-- Grafana --" }, "enable": true, "hide": true, "name": "Annotations & Alerts", "type": "dashboard" } ] },
+  "editable": true,
+  "graphTooltip": 1,
+  "liveNow": false,
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["unireservas", "runtime", "python"],
+  "templating": {
+    "list": [
+      { "current": { "selected": false, "text": "Prometheus", "value": "prometheus" },
+        "hide": 0, "label": "Datasource", "name": "DS_PROMETHEUS", "query": "prometheus", "refresh": 1, "type": "datasource" }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "UniReservas — Python Runtime",
+  "uid": "unireservas-python-runtime",
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Uptime do processo",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "time() - process_start_time_seconds{job=\"unireservas-api\"}" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Memória residente",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1, "color": { "mode": "thresholds" },
+        "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 268435456 }, { "color": "red", "value": 536870912 } ] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "process_resident_memory_bytes{job=\"unireservas-api\"}" } ]
+    },
+    {
+      "type": "stat",
+      "title": "CPU (core/s)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 3, "color": { "mode": "thresholds" },
+        "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 0.7 }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "rate(process_cpu_seconds_total{job=\"unireservas-api\"}[1m])" } ]
+    },
+    {
+      "type": "stat",
+      "title": "File descriptors abertos",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "expr": "process_open_fds{job=\"unireservas-api\"}" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Uso de memória do processo",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 15 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "process_resident_memory_bytes{job=\"unireservas-api\"}", "legendFormat": "resident (RSS)" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "process_virtual_memory_bytes{job=\"unireservas-api\"}", "legendFormat": "virtual (VMS)" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Uso de CPU do processo",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(process_cpu_seconds_total{job=\"unireservas-api\"}[1m])", "legendFormat": "cpu cores" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Coletas do Garbage Collector por geração",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(python_gc_collections_total{job=\"unireservas-api\"}[5m])", "legendFormat": "geração {{generation}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Objetos coletados / não coletáveis pelo GC",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(python_gc_objects_collected_total{job=\"unireservas-api\"}[5m])", "legendFormat": "coletados g{{generation}}" },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "rate(python_gc_objects_uncollectable_total{job=\"unireservas-api\"}[5m])", "legendFormat": "não coletáveis g{{generation}}" }
+      ]
+    }
+  ]
+}

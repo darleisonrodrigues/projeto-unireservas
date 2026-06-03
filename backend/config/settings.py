@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5MB
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "webp"]
 
+    # Observabilidade / Métricas (Prometheus + Grafana)
+    METRICS_ENABLED: bool = True            # Expor /metrics para o Prometheus
+    METRICS_ENDPOINT: str = "/metrics"      # Caminho do endpoint de métricas
+    METRICS_NAMESPACE: str = "unireservas"  # Prefixo das métricas customizadas
+
     # Converte a string de origins em uma lista
     def get_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]

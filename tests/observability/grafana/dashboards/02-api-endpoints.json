@@ -1,0 +1,127 @@
+{
+  "annotations": { "list": [ { "builtIn": 1, "datasource": { "type": "grafana", "uid": "-- Grafana --" }, "enable": true, "hide": true, "name": "Annotations & Alerts", "type": "dashboard" } ] },
+  "editable": true,
+  "graphTooltip": 1,
+  "liveNow": false,
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["unireservas", "api", "endpoints"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "prometheus" },
+        "hide": 0, "label": "Datasource", "name": "DS_PROMETHEUS",
+        "query": "prometheus", "refresh": 1, "type": "datasource"
+      },
+      {
+        "name": "handler",
+        "label": "Endpoint",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(http_requests_total{job=\"unireservas-api\"}, handler)",
+        "query": { "query": "label_values(http_requests_total{job=\"unireservas-api\"}, handler)", "refId": "A" },
+        "includeAll": true, "multi": true, "allValue": ".*", "current": { "text": "All", "value": "$__all" },
+        "refresh": 2, "type": "query", "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-30m", "to": "now" },
+  "timezone": "browser",
+  "title": "UniReservas — API Endpoints",
+  "uid": "unireservas-api-endpoints",
+  "version": 1,
+  "panels": [
+    {
+      "type": "table",
+      "title": "Top endpoints por throughput (5m)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 }, "overrides": [] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "Value", "desc": true } ] },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "topk(20, sum by (handler, method) (rate(http_requests_total{job=\"unireservas-api\", handler=~\"$handler\"}[5m])))" }
+      ],
+      "transformations": [ { "id": "labelsToFields", "options": {} }, { "id": "organize", "options": { "excludeByName": { "Time": true } } } ]
+    },
+    {
+      "type": "table",
+      "title": "Endpoints mais lentos (p95, 5m)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 3 }, "overrides": [] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "Value", "desc": true } ] },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "topk(20, histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"unireservas-api\", handler=~\"$handler\"}[5m]))))" }
+      ],
+      "transformations": [ { "id": "labelsToFields", "options": {} }, { "id": "organize", "options": { "excludeByName": { "Time": true } } } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Throughput por endpoint",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "id": 3,
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (handler) (rate(http_requests_total{job=\"unireservas-api\", handler=~\"$handler\"}[1m]))", "legendFormat": "{{handler}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latência p95 por endpoint",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "id": 4,
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"unireservas-api\", handler=~\"$handler\"}[5m])))", "legendFormat": "{{handler}}" }
+      ]
+    },
+    {
+      "type": "heatmap",
+      "title": "Distribuição de latência (heatmap)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "options": { "calculate": false, "cellGap": 1, "color": { "scheme": "Spectral", "mode": "scheme" }, "yAxis": { "unit": "s" } },
+      "targets": [
+        { "refId": "A", "format": "heatmap", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (le) (rate(http_request_duration_seconds_bucket{job=\"unireservas-api\", handler=~\"$handler\"}[1m]))", "legendFormat": "{{le}}" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Erros por endpoint e status (5m)",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 18 },
+      "id": 6,
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "Value", "desc": true } ] },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (handler, status) (increase(http_requests_total{job=\"unireservas-api\", status=~\"(4|5)..\", handler=~\"$handler\"}[5m]))" }
+      ],
+      "transformations": [ { "id": "labelsToFields", "options": {} }, { "id": "organize", "options": { "excludeByName": { "Time": true } } } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Tamanho médio de resposta por endpoint",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 27 },
+      "id": 7,
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum by (handler) (rate(unireservas_http_response_size_bytes_sum{job=\"unireservas-api\", handler=~\"$handler\"}[5m])) / clamp_min(sum by (handler) (rate(unireservas_http_response_size_bytes_count{job=\"unireservas-api\", handler=~\"$handler\"}[5m])), 1)", "legendFormat": "{{handler}}" }
+      ]
+    }
+  ]
+}

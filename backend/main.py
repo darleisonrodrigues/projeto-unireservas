@@ -48,6 +48,59 @@ print("Rota Reservations registrada")
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 print("Rota Chat registrada")
 
+# ──────────────────────────────────────────────
+# Observabilidade — Métricas Prometheus (scrape pelo Grafana)
+# ──────────────────────────────────────────────
+# Expõe um endpoint /metrics no formato Prometheus com latência, throughput,
+# códigos de status e requisições em andamento por handler/método.
+# É opcional e controlado por settings.METRICS_ENABLED — se o pacote não
+# estiver instalado, a API continua funcionando normalmente.
+if settings.METRICS_ENABLED:
+    try:
+        # pyrefly: ignore [missing-import]
+        from prometheus_fastapi_instrumentator import Instrumentator, metrics
+
+        instrumentator = Instrumentator(
+            should_group_status_codes=True,        # agrupa em 2xx/4xx/5xx
+            should_ignore_untemplated=True,        # ignora rotas não roteadas (404 ruidoso)
+            should_instrument_requests_inprogress=True,
+            excluded_handlers=[settings.METRICS_ENDPOINT, "/health", "/favicon.ico"],
+            inprogress_name="http_requests_inprogress",
+            inprogress_labels=True,
+            env_var_name="METRICS_ENABLED",
+        )
+
+        # Registrar explicitamente o conjunto de métricas. Ao usar .add(), o
+        # instrumentator não inclui mais o pacote padrão automaticamente, então
+        # declaramos throughput + latência + tamanho de payloads de forma explícita.
+        instrumentator.add(
+            metrics.requests(
+                should_include_handler=True,
+                should_include_method=True,
+                should_include_status=True,
+            )
+        ).add(
+            metrics.latency(
+                should_include_handler=True,
+                should_include_method=True,
+                should_include_status=True,
+            )
+        ).add(
+            metrics.request_size(should_include_handler=True, metric_namespace=settings.METRICS_NAMESPACE)
+        ).add(
+            metrics.response_size(should_include_handler=True, metric_namespace=settings.METRICS_NAMESPACE)
+        )
+
+        instrumentator.instrument(app).expose(
+            app,
+            endpoint=settings.METRICS_ENDPOINT,
+            include_in_schema=False,
+            tags=["Observability"],
+        )
+        print(f"Métricas Prometheus expostas em {settings.METRICS_ENDPOINT}")
+    except ImportError:
+        print("prometheus-fastapi-instrumentator não instalado — métricas desativadas")
+
 # Criar e montar a pasta de uploads estáticos para o local storage
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

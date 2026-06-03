@@ -1,0 +1,113 @@
+# ════════════════════════════════════════════════════════════════
+#  Stack de Observabilidade — UniReservas
+# ════════════════════════════════════════════════════════════════
+#  Componentes:
+#    - Prometheus     : coleta e armazena as métricas (TSDB)
+#    - Grafana        : dashboards e visualização (provisionados)
+#    - locust-exporter: expõe as métricas dos testes de carga Locust
+#    - node-exporter  : métricas do host        (profile: system)
+#    - cAdvisor       : métricas dos containers  (profile: system)
+#
+#  Como subir:
+#    docker compose -f docker-compose.observability.yml up -d
+#    docker compose -f docker-compose.observability.yml --profile system up -d
+#
+#  Acessos padrão:
+#    Grafana    -> http://localhost:3000   (admin / admin)
+#    Prometheus -> http://localhost:9090
+# ════════════════════════════════════════════════════════════════
+name: unireservas-observability
+
+services:
+  # ── Prometheus ────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: unireservas-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle           # permite reload via API (POST /-/reload)
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      # Permite que o Prometheus (em container) alcance a API rodando no host
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Grafana ───────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: unireservas-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=5s
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  # ── Locust Exporter ───────────────────────────────────────────
+  # Faz scrape da UI web do Locust e expõe as métricas ao Prometheus.
+  # Requer o Locust rodando em modo web (porta 8089) acessível pelo host.
+  locust-exporter:
+    image: containersol/locust_exporter:latest
+    container_name: unireservas-locust-exporter
+    restart: unless-stopped
+    ports:
+      - "9646:9646"
+    environment:
+      - LOCUST_EXPORTER_URI=${LOCUST_URI:-http://host.docker.internal:8089}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ── Node Exporter (métricas do host) ─ profile: system ─────────
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: unireservas-node-exporter
+    restart: unless-stopped
+    profiles: ["system"]
+    ports:
+      - "9100:9100"
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+
+  # ── cAdvisor (métricas dos containers) ─ profile: system ───────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: unireservas-cadvisor
+    restart: unless-stopped
+    profiles: ["system"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
