@@ -2,11 +2,12 @@
 Configuração do Firebase Firestore
 """
 
+import os
+
 import firebase_admin
 from firebase_admin import credentials, firestore, storage # 1. Adicionar 'storage'
+
 from config.settings import settings
-import json
-import os
 
 #Inicializa a conexão com o Firebase
 def initialize_firebase():
@@ -21,10 +22,10 @@ def initialize_firebase():
             else:
                 # Trata a chave privada se estiver vindo do Dokploy com "literal \n" ou sem quebras corretas
                 raw_key = settings.FIREBASE_PRIVATE_KEY
-                
+
                 # Previne erro formatação caso os \n do Dokploy fiquem como literais ou escapados errados
                 formatted_key = raw_key.replace('\\n', '\n')
-                
+
                 # Recupera se o env tirou todos os \n exceto do começo e fim (solução bruta para MalformedFraming)
                 if "-----BEGIN PRIVATE KEY-----" in formatted_key and formatted_key.count('\n') <= 3:
                      # Remove cabeçalho e rodapé temporariamente
@@ -48,7 +49,7 @@ def initialize_firebase():
                     "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL
                 }
                 cred = credentials.Certificate(firebase_config)
-            
+
             # Adicionar a configuração do Storage Bucket
             firebase_admin.initialize_app(cred, {
                 'storageBucket': f"{settings.FIREBASE_PROJECT_ID}.firebasestorage.app"
@@ -88,4 +89,3 @@ def get_db():
     if db is None:
         db = get_firestore_client()
     return db
-

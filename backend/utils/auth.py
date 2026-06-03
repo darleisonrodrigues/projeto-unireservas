@@ -21,7 +21,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -30,7 +30,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     #Verificar e decodificar token JWT
     token = credentials.credentials
-    
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")
@@ -41,12 +41,12 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return user_id
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 def get_current_user(

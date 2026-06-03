@@ -1,9 +1,10 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from datetime import timedelta
 from jose import JWTError, jwt
 
-from models.profile import UserCreate, LoginRequest, LoginResponse, ApiResponse
+from models.profile import UserCreate, LoginRequest, ApiResponse
 from services.profile_service import ProfileService
 from utils.auth import create_access_token, verify_token
 from config.settings import settings
@@ -18,18 +19,18 @@ security = HTTPBearer()
 async def register(user_data: UserCreate):
     try:
         print(f"Dados recebidos: {user_data.model_dump()}")
-        
+
         # Obter tipo de usuário com compatibilidade frontend/backend
         user_type = user_data.get_user_type()
         print(f"Tipo de usuário identificado: {user_type}")
-        
+
         if not user_type:
             print("Tipo de usuário não encontrado")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Tipo de usuário é obrigatório (userType ou user_type)"
             )
-        
+
         # Verificar se email já existe
         existing_user = profile_service.get_user_by_email(user_data.email)
         if existing_user:
@@ -39,7 +40,7 @@ async def register(user_data: UserCreate):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Email já cadastrado: {user_data.email}. Tente com outro email."
             )
-        
+
         # Validar campos obrigatórios baseado no tipo de usuário
         if user_type == "student":
             print(f"Validando estudante - University: {user_data.university}")
@@ -58,14 +59,14 @@ async def register(user_data: UserCreate):
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Campo obrigatório para anunciante: companyName"
                 )
-        
+
         print("[OK] Validações passaram - Criando usuário...")
-        
+
         # Criar usuário
         new_user = profile_service.create_user(user_data)
-        
+
         print(f"[OK] Usuário criado com sucesso: {new_user.id}")
-        
+
         # Criar tokens para o usuário recém-criado
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
@@ -96,7 +97,7 @@ async def register(user_data: UserCreate):
                 "refreshToken": refresh_token
             }
         )
-        
+
     except HTTPException as e:
         print(f"HTTPException: {e.detail}")
         raise
@@ -105,7 +106,7 @@ async def register(user_data: UserCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro interno do servidor: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/login", response_model=ApiResponse)
@@ -134,14 +135,14 @@ async def login(login_data: LoginRequest):
             )
 
         print("[OK] Senha verificada com sucesso")
-        
+
         # Verificar se usuário está ativo
         if not user_data.get("is_active", True):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Conta desativada"
             )
-        
+
         # Criar token de acesso e refresh token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
@@ -155,7 +156,7 @@ async def login(login_data: LoginRequest):
             data={"sub": user_data["id"], "type": "refresh"},
             expires_delta=refresh_token_expires
         )
-        
+
         print("Buscando dados completos do usuário...")
 
         # Buscar dados completos do usuário (sem senha)
@@ -188,14 +189,14 @@ async def login(login_data: LoginRequest):
             },
             message="Login realizado com sucesso"
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro interno do servidor: {str(e)}"
-        )
+        ) from e
 
     #Fazer logout (no frontend deve remover o token)
 @router.post("/logout", response_model=ApiResponse)
@@ -224,7 +225,7 @@ async def get_current_user_info(credentials: HTTPAuthorizationCredentials = Depe
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/verify-token", response_model=ApiResponse)

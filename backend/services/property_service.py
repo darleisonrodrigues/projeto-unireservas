@@ -5,7 +5,7 @@ import uuid
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
-from models.property import Property, PropertyCreate, PropertyUpdate
+from models.property import PropertyCreate, PropertyUpdate
 
 
 class PropertyService:
@@ -17,7 +17,7 @@ class PropertyService:
         if self.db is None:
             self.db = get_db()
         return self.db
-    
+
         #Criar nova propriedade
     def create_property(self, property_data: PropertyCreate, owner_id: str) -> Dict[str, Any]:
         print(f"[PropertyService] Criando propriedade para owner: {owner_id}")
@@ -60,14 +60,14 @@ class PropertyService:
         db = self._get_db()
         if not db:
             raise Exception("Banco de dados não disponível")
-        
+
         doc_ref = db.collection(self.collection).document(property_id)
         doc = doc_ref.get()
 
         if not doc.exists:
             print(f"[PropertyService] Propriedade {property_id} não encontrada ao adicionar imagens")
             return None
-        
+
         property_data = doc.to_dict()
         if property_data.get('owner_id') != user_id:
             raise Exception("Você não tem permissão para editar esta propriedade")
@@ -82,7 +82,7 @@ class PropertyService:
         result = updated_doc.to_dict()
         result["id"] = updated_doc.id
         return result
-    
+
         #Buscar propriedade por ID
     def get_property_by_id(self, property_id: str) -> Optional[Dict[str, Any]]:
         print(f"[PropertyService] Buscando propriedade: {property_id}")
@@ -97,7 +97,7 @@ class PropertyService:
             return prop_data
         print("[PropertyService] Propriedade não encontrada")
         return None
-    
+
         #Listar propriedades com paginação e filtros
     def get_properties(self, owner_id: str = None, page: int = 1, per_page: int = 10, filters=None, current_user_id: str = None) -> Dict[str, Any]:
         print(f"[PropertyService] Listando propriedades - Owner: {owner_id}, Page: {page}")
@@ -114,7 +114,7 @@ class PropertyService:
                 query = query.where(filter=FieldFilter("price", "<=", filters.max_price))
             if filters.location:
                 query = query.where(filter=FieldFilter("location", ">=", filters.location)).where(filter=FieldFilter("location", "<=", filters.location + "\uf8ff"))
-        
+
         try:
             all_docs = list(query.stream())
             total_docs = len(all_docs)
@@ -143,7 +143,7 @@ class PropertyService:
         }
         print(f"[OK] [PropertyService] Encontradas {len(properties)} propriedades")
         return result
-    
+
         #Atualizar propriedade (apenas pelo owner)
     def update_property(self, property_id: str, property_data: PropertyUpdate, owner_id: str) -> Optional[Dict[str, Any]]:
         print(f"[PropertyService] Atualizando propriedade {property_id} pelo owner {owner_id}")
@@ -167,7 +167,7 @@ class PropertyService:
         result["id"] = updated_doc.id
         print("[OK] [PropertyService] Propriedade atualizada")
         return result
-    
+
         #Deletar propriedade (apenas pelo owner)
     def delete_property(self, property_id: str, owner_id: str) -> bool:
         print(f"[PropertyService] Deletando propriedade {property_id} pelo owner {owner_id}")
@@ -201,7 +201,7 @@ class PropertyService:
             return True
         except Exception as e:
             print(f"[ERROR] [PropertyService] Erro ao deletar documento: {str(e)}")
-            raise Exception(f"Erro ao deletar propriedade: {str(e)}")
+            raise Exception(f"Erro ao deletar propriedade: {str(e)}") from e
 
        #Buscar propriedades por termo e filtros
     def search_properties(self, search_term: str = None, filters=None, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
@@ -248,7 +248,7 @@ class PropertyService:
 
         print(f"[OK] [PropertyService] Busca retornou {len(properties)} propriedades")
         return result
-    
+
         #Buscar todas as propriedades de um anunciante
     def get_properties_by_owner(self, owner_id: str, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         print(f"[PropertyService] Buscando propriedades do owner: {owner_id}")
@@ -296,7 +296,7 @@ class PropertyService:
 
         print(f"[OK] [PropertyService] Favorito atualizado no perfil do usuário")
         return True
-    
+
         #Buscar lista de favoritos do usuario
     def _get_user_favorites(self, user_id: str) -> List[str]:
         try:

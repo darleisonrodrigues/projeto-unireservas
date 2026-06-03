@@ -1,5 +1,7 @@
+from typing import Union
+
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import Union, List
+
 from models.rental import ChatCreate, MessageCreate, ChatResponse, MessageResponse, ChatListResponse, ChatMessagesResponse
 from models.profile import StudentProfile, AdvertiserProfile
 from services.chat_service import chat_service
@@ -29,7 +31,7 @@ async def create_or_get_chat(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao criar chat: {str(e)}"
-        )
+        ) from e
 
 
 # Enviar mensagem em um chat
@@ -52,7 +54,7 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Erro ao enviar mensagem: {str(e)}"
-        )
+        ) from e
 
 
 # Listar chats do usuário
@@ -72,7 +74,7 @@ async def get_my_chats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar chats: {str(e)}"
-        )
+        ) from e
 
 
 # Buscar mensagens de um chat específico com paginação
@@ -108,11 +110,11 @@ async def get_chat_messages(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=str(e)
-            )
+            ) from e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar mensagens: {str(e)}"
-        )
+        ) from e
 
 
 # Buscar detalhes de um chat específico
@@ -150,4 +152,4 @@ async def get_chat_details(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar chat: {str(e)}"
-        )
+        ) from e

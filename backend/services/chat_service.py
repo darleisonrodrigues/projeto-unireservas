@@ -1,9 +1,8 @@
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 from datetime import datetime
 import uuid
 from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
-from models.rental import ChatCreate, MessageCreate, ChatResponse, MessageResponse, ChatListResponse, ChatMessagesResponse
 
 
 class ChatService:

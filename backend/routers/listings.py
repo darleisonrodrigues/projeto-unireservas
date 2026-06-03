@@ -2,11 +2,12 @@
 Rotas para listings
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File
 from typing import Optional, List
 
+from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File
+
 from models.listing import (
-    Listing, ListingCreate, ListingUpdate, ListingResponse, 
+    ListingCreate, ListingUpdate, ListingResponse,
     ListingsListResponse, PhotoUploadResponse
 )
 from models.profile import AdvertiserProfile
@@ -30,7 +31,7 @@ async def create_listing(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao criar listing: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/", response_model=ListingsListResponse)
@@ -49,14 +50,14 @@ async def list_listings(
             university=university,
             is_active=is_active
         )
-        
+
         return ListingsListResponse(**result)
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar listings: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/my", response_model=ListingsListResponse)
@@ -74,14 +75,14 @@ async def list_my_listings(
             user_id=current_user.id,
             is_active=is_active
         )
-        
+
         return ListingsListResponse(**result)
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar seus listings: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/university/{university}", response_model=ListingsListResponse)
@@ -96,14 +97,14 @@ async def list_listings_by_university(
             page=page,
             per_page=per_page
         )
-        
+
         return ListingsListResponse(**result)
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar listings da universidade: {str(e)}"
-        )
+        ) from e
 
     #Obter listing por ID
 @router.get("/{listing_id}", response_model=ListingResponse)
@@ -122,7 +123,7 @@ async def get_listing(listing_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao buscar listing: {str(e)}"
-        )
+        ) from e
 
 
 @router.put("/{listing_id}", response_model=ListingResponse)
@@ -142,18 +143,18 @@ async def update_listing(
                 detail="Listing não encontrado"
             )
         return updated_listing
-    except PermissionError:
+    except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sem permissão para editar este listing"
-        )
+        ) from e
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao atualizar listing: {str(e)}"
-        )
+        ) from e
 
 
 @router.delete("/{listing_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -168,18 +169,18 @@ async def delete_listing(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Listing não encontrado"
             )
-    except PermissionError:
+    except PermissionError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sem permissão para deletar este listing"
-        )
+        ) from e
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao deletar listing: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/{listing_id}/photos", response_model=List[PhotoUploadResponse])
@@ -197,13 +198,13 @@ async def upload_photos(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Listing não encontrado"
             )
-        
+
         if listing.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Sem permissão para fazer upload neste listing"
             )
-        
+
         # TODO: Implementar upload real para Firebase Storage ou serviço de imagens
         # Por enquanto, retorna URLs fictícias
         uploaded_photos = []
@@ -214,27 +215,27 @@ async def upload_photos(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Arquivo {file.filename} não é uma imagem válida"
                 )
-            
+
             # Simular upload
             photo_url = f"https://storage.googleapis.com/unireservas/{listing_id}/photo_{i}_{file.filename}"
             uploaded_photos.append(PhotoUploadResponse(
                 url=photo_url,
                 filename=file.filename
             ))
-        
+
         # Atualizar URLs das fotos no listing
         photo_urls = [photo.url for photo in uploaded_photos]
         listing_service.update_photos(listing_id, photo_urls, current_user.id)
-        
+
         return uploaded_photos
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro no upload de fotos: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/search/", response_model=ListingsListResponse)
@@ -251,4 +252,4 @@ async def search_listings(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro na busca: {str(e)}"
-        )
+        ) from e

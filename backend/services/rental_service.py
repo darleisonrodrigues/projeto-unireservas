@@ -1,11 +1,9 @@
 
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 from datetime import datetime
 import uuid
-from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from config.firebase_config import get_db
-from models.rental import RentalInterest, RentalRequest
 
 
 class RentalService:
@@ -18,7 +16,7 @@ class RentalService:
         if self.db is None:
             self.db = get_db()
         return self.db
-    
+
         #Demonstrar interesse em uma propriedade
     def express_interest(self, property_id: str, student_id: str, message: str = None) -> Dict[str, Any]:
         print(f"[RentalService] Estudante {student_id} demonstrando interesse na propriedade {property_id}")
@@ -68,7 +66,7 @@ class RentalService:
 
         print(f"[OK] [RentalService] Interesse registrado: {interest_id}")
         return interest_data
-    
+
         #Buscar interesses do estudante
     def _batch_fetch_docs(self, collection: str, doc_ids: List[str]) -> Dict[str, Dict[str, Any]]:
         """Buscar múltiplos documentos por ID em 1 round-trip via get_all"""
