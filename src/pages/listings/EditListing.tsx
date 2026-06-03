@@ -592,7 +592,7 @@ const EditListing = () => {
                     // Simular evento de input para reutilizar a lógica
                     const inputEvent = {
                       target: { files, value: '' }
-                    } as any;
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
                     handlePhotoSelect(inputEvent);
                   }
                 }}

@@ -37,6 +37,7 @@ BASE_URL = os.environ.get("LOCUST_BASE_URL", "http://localhost:8000")
 STUDENT_TOKEN = os.environ.get("STUDENT_TOKEN", " ")
 ADVERTISER_TOKEN = os.environ.get("ADVERTISER_TOKEN", " ")
 
+
 # Termos de busca para simular buscas reais
 SEARCH_TERMS = ["UFMG", "USP", "UNICAMP", "PUC", "apartamento", "quarto", "kitnet", "Pampulha", "centro", "mobiliado"]
 PROPERTY_TYPES = ["apartamento", "kitnet", "quarto"]

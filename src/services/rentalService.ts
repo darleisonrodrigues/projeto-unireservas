@@ -17,8 +17,8 @@ export interface RentalInterestResponse {
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at: string;
-  property?: any;
-  student?: any;
+  property?: Record<string, unknown>;
+  student?: Record<string, unknown>;
 }
 
 class RentalService {
@@ -95,7 +95,7 @@ class RentalService {
     }
   }
 
-  async updateInterestStatus(interestId: string, status: 'pending' | 'accepted' | 'rejected'): Promise<any> {
+  async updateInterestStatus(interestId: string, status: 'pending' | 'accepted' | 'rejected'): Promise<RentalInterestResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/interests/${interestId}/status`, {
         method: 'PATCH',

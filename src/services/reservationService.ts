@@ -4,7 +4,7 @@ import { API_CONFIG } from '@/config/api';
 
 const API_BASE_URL = `${API_CONFIG.BASE_URL}/api/reservations`;
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data?: T;
